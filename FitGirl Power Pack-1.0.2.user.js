@@ -431,15 +431,6 @@ this.$ = this.jQuery = jQuery.noConflict(true);
   menu.appendChild(li);
 })();
 
-// ==UserScript==
-// @name         FitGirl Table Width Fixer
-// @namespace    https://fitgirl-repacks.site/
-// @version      1.0
-// @description  Makes wide tables responsive and scrollable on FitGirl pages
-// @match        https://fitgirl-repacks.site/*
-// @grant        none
-// ==/UserScript==
-
 (function fixDonatePage() {
   'use strict';
 
