@@ -2,7 +2,7 @@
 // @name         FitGirl Power Pack
 // @namespace    https://tampermonkey.net/
 // @version      1.0.2
-// @description  Dark theme, optional comments toggle, YouTube trailer link, infinite scroll for tag archives, and a tag page – all in one userscript for FitGirl‑Repacks.
+// @description  Dark theme, optional comments toggle, YouTube trailer link, infinite scroll, and a tag page – all in one userscript for FitGirl‑Repacks.
 // @author       theovlit
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=fitgirl-repacks.site
 // @match        https://fitgirl-repacks.site/*
@@ -19,6 +19,37 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 /*****************************************************************
  * 1. DARK MODE STYLES                                            *
  *****************************************************************/
+(function replaceImages() {
+  const divs = document.querySelectorAll('div[style*="paw.png"]');
+  divs.forEach(div => {
+    div.style.backgroundImage = 'url(https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/paw_dark.png)';
+    div.style.backgroundSize = '213px auto'; // You can adjust this value
+    div.style.backgroundRepeat = 'no-repeat'; // Optional: ensure no repeating
+    div.style.backgroundPosition = 'top right'; // Optional: keep original alignment
+    div.style.backgroundPositionY = '100px'; // shift image down
+  });
+  const PPA = document.querySelectorAll('a[href="https://fitgirl-repacks.site/games-with-my-personal-pink-paw-award/"]');
+  PPA.forEach(el => {
+    el.style.backgroundImage = 'url(https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/paw_black_bg.png)';
+    el.style.backgroundSize = '71px auto'; // You can adjust this value
+    el.style.backgroundRepeat = 'no-repeat'; // Optional: ensure no repeating
+    el.style.backgroundPosition = 'top right'; // Optional: keep original alignment
+  });
+  const garold = document.querySelectorAll('div[style*="garold1-1.jpg"]');
+  garold.forEach(div => {
+    div.style.backgroundImage = 'url(https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/garold1-1-dark.jpg)';
+    div.style.backgroundSize = '657px auto'; // You can adjust this value
+    div.style.backgroundRepeat = 'no-repeat'; // Optional: ensure no repeating
+    div.style.backgroundPosition = 'top right'; // Optional: keep original alignment
+    div.style.backgroundPositionY = '-30px'; // shift image down
+  });
+    document.querySelectorAll('img[src="https://fitgirl-repacks.site/wp-content/uploads/2024/05/support2.jpg"]').forEach(img => {
+  img.src = 'https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/support2-dark.jpg';
+});
+
+})();
+
+
 (function applyDarkTheme() {
   'use strict';
 
@@ -50,6 +81,12 @@ this.$ = this.jQuery = jQuery.noConflict(true);
       border-top-right-radius: unset;
     }
 
+  .entry-content table td {
+    background-color: #1a1a1a !important;
+    color: #f0f0f0 !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
 
     a, a:visited {
       color: var(--link-color) !important;
@@ -64,8 +101,12 @@ this.$ = this.jQuery = jQuery.noConflict(true);
      margin-top: 18px;
    }
 
-   img[src*="support2.jpg"] {
+   img[src*="support2-dark.jpg"] {
    margin: 18px 0 0 0 !important;
+   }
+
+   div[style*="paw_dark.png"] {
+     background-size: 346px;
    }
 
     .su-spoiler-style-fancy > .su-spoiler-content {
@@ -166,7 +207,7 @@ this.$ = this.jQuery = jQuery.noConflict(true);
     }
 
     #content h3 div {
-      background-image: none !important;
+      background-image: none;
     }
 
     .content-sidebar {
@@ -291,10 +332,9 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 })(jQuery);
 
 /*****************************************************************
- * 4. INFINITE SCROLL (TAG ARCHIVES)                              *
+ * 4. INFINITE SCROLL                                            *
  *****************************************************************/
 (function infiniteScroll(){
-  if(!location.pathname.includes('/tag/')) return; // only tag pages
   let loading=false;
   async function loadNext(){
     if(loading) return;
@@ -391,3 +431,46 @@ this.$ = this.jQuery = jQuery.noConflict(true);
   menu.appendChild(li);
 })();
 
+// ==UserScript==
+// @name         FitGirl Table Width Fixer
+// @namespace    https://fitgirl-repacks.site/
+// @version      1.0
+// @description  Makes wide tables responsive and scrollable on FitGirl pages
+// @match        https://fitgirl-repacks.site/*
+// @grant        none
+// ==/UserScript==
+
+(function fixDonatePage() {
+  'use strict';
+
+  const fixTables = () => {
+    document.querySelectorAll('.entry-content table').forEach((table) => {
+      // Skip if already wrapped
+      if (table.parentElement && table.parentElement.classList.contains('fg-scroll-wrapper')) return;
+
+      // Create wrapper
+      const wrapper = document.createElement('div');
+      wrapper.className = 'fg-scroll-wrapper';
+      wrapper.style.overflowX = 'auto';
+      wrapper.style.maxWidth = '100%';
+
+      // Style table
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.tableLayout = 'fixed';
+
+      // Style cells
+      table.querySelectorAll('td, th').forEach(cell => {
+        cell.style.wordBreak = 'break-word';
+        cell.style.overflowWrap = 'anywhere';
+      });
+
+      // Wrap the table
+      table.parentNode.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+    });
+  };
+
+  // Run on load
+  window.addEventListener('load', fixTables);
+})();
