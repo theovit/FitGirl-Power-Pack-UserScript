@@ -1,0 +1,164 @@
+:root {
+	--background-color: #121212;
+	--secondary-bg-color: #1a1a1a;
+	--foreground-color: #e0e0e0;
+	--accent-color: #f887ff;
+	--border-color: #333;
+	--link-color: #80cbc4;
+}
+
+body {
+	background: var(--background-color) !important;
+	color: var(--foreground-color) !important;
+}
+
+img[src*="torrent-stats.info/"] {
+	filter: brightness(90%) invert(100) !important;
+}
+
+
+#secondary {
+	background-color: black !important;
+	border-top-left-radius: unset !important;
+	border: 1px solid var(--border-color);
+	border-radius: 8px;
+	border-top-right-radius: unset;
+}
+
+.entry-content table td {
+	background-color: #1a1a1a !important;
+	color: #f0f0f0 !important;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+}
+
+a,
+a:visited {
+	color: var(--link-color) !important;
+}
+
+
+.content-sidebar {
+	background-color: black
+}
+
+h2.site-description {
+	margin-top: 18px;
+}
+
+img[src*="support2-dark.jpg"] {
+	margin: 18px 0 0 0 !important;
+}
+
+div[style*="paw_dark.png"] {
+	background-size: 346px;
+}
+
+.su-spoiler-style-fancy>.su-spoiler-content {
+	background-color: var(--background-color) !important;
+	color: #ccc !important;
+}
+
+.su-spoiler-style-fancy>.su-spoiler-title,
+.su-spoiler-style-fancy.su-spoiler-closed>.su-spoiler-title {
+	background-color: var(--accent-color) !important;
+	color: #000 !important;
+}
+
+span[style*="color: black"] {
+	background-color: transparent !important;
+	color: red !important;
+}
+
+
+.primary-navigation .nav-menu {
+	background-color: black !important;
+}
+
+.header-main {
+	background-color: black !important;
+}
+
+#jBnskDj9 {
+	background-color: var(--background-color) !important;
+	color: var(--foreground-color) !important;
+}
+
+.site,
+#page,
+.wrapper,
+.container,
+.row,
+.columns,
+.column,
+.site-header,
+.site-content,
+.site-footer,
+.entry-content,
+.post,
+.comment-form,
+.entry-header,
+.entry-footer,
+.site-main,
+.page-content,
+.hentry,
+.nav-menu,
+.entry-meta,
+.site-branding {
+	background-color: var(--background-color) !important;
+	color: var(--foreground-color) !important;
+}
+
+.site:before {
+	background-color: unset !important;
+}
+
+.site-header {
+	max-width: 1519px;
+	border: 1px solid var(--border-color);
+}
+
+.site-content .entry-meta,
+.site-content .entry-header,
+.site-content .footer.entry-meta,
+.site-content .entry-content {
+	background-color: var(--secondary-bg-color) !important;
+}
+
+.site-main article,
+.site-content article,
+.entry-content article,
+.post article,
+body article {
+	background-color: var(--secondary-bg-color) !important;
+	border: 1px solid var(--border-color) !important;
+	border-radius: 8px !important;
+	margin: 1.5em 0 !important;
+	padding: 1em !important;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+
+#page {
+	width: 95%;
+	max-width: 1400px;
+	margin: 0 auto !important;
+	padding: 0 1em;
+}
+
+#content {
+	padding-left: 22px !important;
+
+}
+
+#content h3 div {
+	background-image: none;
+}
+
+.content-sidebar {
+	left: 120px;
+	border-top-left-radius: unset !important;
+	border: 1px solid var(--border-color);
+	border-radius: 8px;
+	border-top-right-radius: unset;
+}
