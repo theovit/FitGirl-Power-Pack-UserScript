@@ -225,10 +225,9 @@ replaceImages();
  *****************************************************************/
 (function toggleTolstoyComments(){
   const selector='iframe[src*="tolstoycomments.com"]';
-  const poll=setInterval(()=>{
+  function addToggle(){
     const iframe=document.querySelector(selector);
-    if(!iframe) return;
-    clearInterval(poll);
+    if(!iframe) return false;
 
     const btn=document.createElement('button');
     btn.textContent='Show Comments';
@@ -243,7 +242,15 @@ replaceImages();
       iframe.style.display=visible?'block':'none';
       btn.textContent=visible?'Hide Comments':'Show Comments';
     });
-  },300);
+    return true;
+  }
+
+  // The widget injects its iframe after load, so wait for it without polling
+  if(addToggle()) return;
+  const observer=new MutationObserver(()=>{
+    if(addToggle()) observer.disconnect();
+  });
+  observer.observe(document.documentElement,{childList:true,subtree:true});
 })();
 
 /*****************************************************************
