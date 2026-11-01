@@ -10,6 +10,8 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.18.2/babel.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.16.0/polyfill.js
 // @grant        GM_addStyle
+// @grant        GM_xmlhttpRequest
+// @connect      www.youtube.com
 // @license      MIT
 // @downloadURL  https://update.greasyfork.org/scripts/541076/FitGirl%20Power%20Pack.user.js
 // @updateURL    https://update.greasyfork.org/scripts/541076/FitGirl%20Power%20Pack.meta.js
@@ -297,8 +299,11 @@ replaceImages();
                 cleanedTitle = rawTitleText;
             }
 
+            // Version numbers throw off the search, e.g. ", v1.40.158958.0"
+            cleanedTitle = cleanedTitle.replace(/,?\s+(?:v\d|build\s*\d).*$/i, '');
+
             const encodedQuery = encodeURIComponent(cleanedTitle);
-            const searchUrl = `https://duckduckgo.com/?hps=1&q=%21+site%3Ayoutube.com+${encodedQuery}+trailer+video+game`;
+            const searchUrl = `https://www.youtube.com/results?search_query=${encodedQuery}+trailer+video+game`;
 
             // Find the specific metadata <p> block by style attribute
             const $metaBlock = $article.find('p[style*="height: 200px"]');
@@ -334,8 +339,24 @@ replaceImages();
                 'toolbar=no'
             ].join(', ');
 
-            const newWindow = window.open(url, 'subpop', params);
-            if (window.focus && newWindow) newWindow.focus();
+            // Open before the lookup so the click still counts and popup blockers allow it
+            const newWindow = window.open('about:blank', 'subpop', params);
+            if (!newWindow) return false;
+            if (window.focus) newWindow.focus();
+
+            // Go to the first video, or the search results if none can be found
+            const openVideo = response => {
+                const match = response && response.responseText.match(/"videoRenderer":\{"videoId":"([\w-]{11})"/);
+                newWindow.location.href = match ? `https://www.youtube.com/watch?v=${match[1]}` : url;
+            };
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url,
+                timeout: 10000,
+                onload: openVideo,
+                onerror: () => openVideo(),
+                ontimeout: () => openVideo()
+            });
 
             return false;
         });

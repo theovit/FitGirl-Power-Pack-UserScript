@@ -1,7 +1,7 @@
 /*
  * Runs the userscript against the live site and reports what each fix did.
  * Input: none; edit USERSCRIPT if the versioned filename changes.
- * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Usage: Playwright MCP browser_close, then browser_run_code_unsafe with filename set to this file.
  * Injects after DOMContentLoaded with a GM_addStyle shim, not through Tampermonkey.
  */
 async (page) => {
@@ -9,11 +9,21 @@ async (page) => {
   const BASE = 'https://fitgirl-repacks.site';
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
+  // A real tab, because page.request fails on YouTube's large response headers
+  await page.exposeFunction('__fgFetch', async url => {
+    const tab = await page.context().newPage();
+    try {
+      await tab.goto(url, { waitUntil: 'domcontentloaded' });
+      return await tab.content();
+    } finally {
+      await tab.close();
+    }
+  });
 
   const load = async (path, waitUntil = 'domcontentloaded') => {
     await page.goto(BASE + path, { waitUntil });
     await page.addScriptTag({ url: 'https://code.jquery.com/jquery-3.4.1.min.js' });
-    await page.addScriptTag({ content: 'window.GM_addStyle = css => { const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s); };' });
+    await page.addScriptTag({ content: 'window.GM_addStyle = css => { const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s); }; window.GM_xmlhttpRequest = o => __fgFetch(o.url).then(t => o.onload({ responseText: t }), () => o.onerror());' });
     await page.addScriptTag({ path: USERSCRIPT });
   };
   const tagList = () => page.waitForFunction(() => /Tag Index/.test(document.body.textContent), null, { timeout: 30000 })
@@ -23,6 +33,20 @@ async (page) => {
       error: /could not be loaded/.test(document.body.textContent),
     })));
   const out = {};
+
+  await load('/');
+  await page.waitForSelector('a.nframe');
+  out.trailers = [];
+  const trailerLinks = await page.locator('a.nframe').count();
+  for (let i = 0; i < trailerLinks; i++) {
+    const link = page.locator('a.nframe').nth(i);
+    const game = await link.evaluate(a => a.closest('article').querySelector('.entry-title').textContent);
+    const [popup] = await Promise.all([page.waitForEvent('popup'), link.click()]);
+    await popup.waitForURL(/youtube\.com\/(watch|results)/, { timeout: 30000 });
+    await popup.waitForTimeout(1500);
+    out.trailers.push({ game: game.slice(0, 50), url: popup.url(), video: (await popup.title()).slice(0, 70) });
+    await popup.close();
+  }
 
   await load('/tags/');
   out.tagsTrailingSlash = await tagList();

@@ -3,7 +3,8 @@
 ## 1.0.4 (unreleased)
 - The repo now includes the layout and spoiler changes from the published 1.0.3 script.
 - The spoiler hyphenation rule now takes effect; a misspelled selector had disabled it.
-- The script no longer runs on DuckDuckGo, so its pages stop getting the dark theme. Trailer links still work because DuckDuckGo sends them straight to YouTube.
+- Trailer buttons now open the first matching YouTube video in the popup, instead of a DuckDuckGo search. If no video can be found, they open YouTube's search results.
+- The script no longer runs on DuckDuckGo, so its pages stop getting the dark theme.
 - Dark paw images now apply to older posts loaded by infinite scroll.
 - The donate page table fix runs reliably instead of depending on page load timing.
 - `/tags/` now shows the tag list, the same as `/tags`.

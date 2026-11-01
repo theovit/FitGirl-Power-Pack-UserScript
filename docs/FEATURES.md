@@ -7,7 +7,7 @@
 
 ## Browsing
 - [stable] Infinite scroll
-- [stable] YouTube trailer links
+- [beta] YouTube trailer links open the video directly (not yet confirmed in Tampermonkey)
 - [stable] Comments show/hide button
 - [stable] Tag index page at `/tags`
 - [stable] Donate page table fix
