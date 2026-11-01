@@ -5,7 +5,7 @@
  * Injects after DOMContentLoaded with a GM_addStyle shim, not through Tampermonkey.
  */
 async (page) => {
-  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack-1.0.2.user.js';
+  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack-1.0.4.user.js';
   const BASE = 'https://fitgirl-repacks.site';
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -63,6 +63,17 @@ async (page) => {
     articlePawStyles: [...document.querySelectorAll('article [style*="paw"]')].map(e => e.tagName + ' ' + (e.getAttribute('style').match(/url\([^)]*\)/) || [''])[0]),
     trailerLinks: document.querySelectorAll('a.nframe').length,
   }), before);
+
+  out.css = await page.evaluate(() => {
+    const style = selector => {
+      const el = document.querySelector(selector);
+      return el && getComputedStyle(el);
+    };
+    return {
+      entryHeaderMaxWidth: style('header.entry-header')?.maxWidth,
+      spoilerHyphens: style('.su-spoiler-content')?.hyphens,
+    };
+  });
 
   out.pageErrors = errors;
   return out;

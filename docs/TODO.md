@@ -2,7 +2,6 @@
 
 ## Medium
 - Dark header image: `div[style*="garold1-1.jpg"]` no longer matches; the Upcoming Repacks page now uses `garold3.jpg`, which has no dark version
-- Add `@updateURL` and `@downloadURL`; needs a filename without the version in it
 
 ## Low
 - Remove the unused Babel and polyfill `@require` lines
