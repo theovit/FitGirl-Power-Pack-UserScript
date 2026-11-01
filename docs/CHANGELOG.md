@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- The kitten on the Upcoming Repacks page now blends into the dark theme and fades out at the edges, instead of sitting on a bright white box.
+
 ## 1.0.4
 - The script file is now `FitGirl Power Pack.user.js`, so its GitHub URL stays the same between versions.
 - The repo now includes the layout and spoiler changes from the published 1.0.3 script.
