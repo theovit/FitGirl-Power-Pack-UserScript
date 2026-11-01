@@ -228,11 +228,11 @@ replaceImages();
       background-image: none;
     }
 
-    /* closest-side makes the glow reach the page colour before any edge of the box */
+    /* The glow stops short of the right edge, where the image lightens and the scrollbar sits */
     div[style*="garold3.jpg"] {
       background:
         url(https://fitgirl-repacks.site/wp-content/uploads/2021/10/garold3.jpg) no-repeat right -30px,
-        radial-gradient(ellipse closest-side at 68% 52%, #777 0%, #737373 20%, #666 38%, #505050 56%, #393939 72%, #272727 86%, #1e1e1e 94%, #1a1a1a 100%) !important;
+        radial-gradient(ellipse 36% 48% at 60% 52%,#777 0%, #737373 20%, #666 38%, #505050 56%, #393939 72%, #272727 86%, #1e1e1e 94%, #1a1a1a 100%) !important;
       background-blend-mode: multiply;
       scrollbar-color: #555 #1a1a1a;
     }
