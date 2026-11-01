@@ -2,6 +2,7 @@
 
 ## Settings
 - [beta] On/off toggles in the Tampermonkey menu
+- [beta] Settings panel from the site's top menu
 
 ## Appearance
 - [stable] Dark theme

@@ -55,6 +55,96 @@ Object.entries(settings).forEach(([setting, label]) => {
   });
 });
 
+// Styled on its own so the panel stays readable with the dark theme turned off
+GM_addStyle(`
+  .fg-settings {
+    padding: 0;
+    width: min(340px, calc(100vw - 32px));
+    background: #1a1a1a;
+    color: #e0e0e0;
+    border: 1px solid #f887ff;
+    border-radius: 8px;
+  }
+  .fg-settings::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .fg-settings form {
+    padding: 20px;
+  }
+  .fg-settings h2 {
+    margin: 0 0 12px;
+    color: #f887ff;
+    font-size: 20px;
+    font-weight: bold;
+    text-transform: none;
+  }
+  .fg-settings label {
+    display: block;
+    padding: 6px 0;
+    color: #e0e0e0;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .fg-settings input {
+    margin: 0 8px 0 0;
+  }
+  .fg-settings p {
+    margin: 12px 0;
+    color: #aaa;
+    font-size: 13px;
+  }
+  .fg-settings button {
+    padding: 8px 16px;
+    background: #f887ff;
+    color: #121212;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+`);
+
+whenDomReady(function settingsPanel() {
+  const menu = document.querySelector('#primary-menu');
+  if (!menu) return;
+
+  const panel = document.createElement('dialog');
+  panel.className = 'fg-settings';
+  panel.innerHTML = `
+    <form method="dialog">
+      <h2>Power Pack settings</h2>
+      ${Object.entries(settings).map(([setting, label]) =>
+        `<label><input type="checkbox" name="${setting}"${isEnabled(setting) ? ' checked' : ''}>${label}</label>`
+      ).join('')}
+      <p>Changes apply when you close this panel.</p>
+      <button>Close</button>
+    </form>
+  `;
+  document.body.appendChild(panel);
+
+  let changed = false;
+  panel.addEventListener('change', e => {
+    GM_setValue(e.target.name, e.target.checked);
+    changed = true;
+  });
+  // Clicks on the backdrop land on the dialog itself; the form covers the rest
+  panel.addEventListener('click', e => {
+    if (e.target === panel) panel.close();
+  });
+  panel.addEventListener('close', () => {
+    if (changed) location.reload();
+  });
+
+  const li = document.createElement('li');
+  li.className = 'menu-item menu-item-type-custom';
+  li.innerHTML = '<a href="#">Settings</a>';
+  li.firstChild.addEventListener('click', e => {
+    e.preventDefault();
+    panel.showModal();
+  });
+  menu.appendChild(li);
+});
+
 /*****************************************************************
  * 1. DARK MODE STYLES                                            *
  *****************************************************************/

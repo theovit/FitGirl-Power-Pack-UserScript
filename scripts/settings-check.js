@@ -80,6 +80,52 @@ async (defaultPage) => {
     await click(label);
     out[label] = { whileOff: off, afterTurningBackOn: await check() };
   }
+  // The on-page panel, using real clicks
+  const shots = 'C:/Users/Andrew/AppData/Local/Temp/claude/D--GitHub/a85b545d-3b74-4545-b5ad-f306bf0b875c/scratchpad';
+  const openPanel = async () => {
+    await page.locator('#primary-menu a', { hasText: 'Settings' }).click();
+    await page.locator('dialog.fg-settings').waitFor();
+  };
+  const closeAndReload = () => Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Close' }).click()]);
+  await open('/');
+  await page.evaluate(() => [...document.querySelectorAll('body *')].filter(e => getComputedStyle(e).position === 'fixed' && /Discover more/.test(e.textContent)).forEach(e => e.remove()));
+  await openPanel();
+  out.panelOpen = await page.evaluate(() => ({
+    open: document.querySelector('dialog.fg-settings').open,
+    checkboxes: document.querySelectorAll('.fg-settings input').length,
+    checked: document.querySelectorAll('.fg-settings input:checked').length,
+    labels: [...document.querySelectorAll('.fg-settings label')].map(l => l.textContent),
+  }));
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: shots + '/panel-dark.png' });
+
+  // Closing with no change must not reload, by backdrop and by Escape
+  await page.evaluate(() => { window.__notReloaded = true; });
+  await page.mouse.click(5, 300);
+  out.backdropClosed = await page.evaluate(() => !document.querySelector('dialog.fg-settings').open && window.__notReloaded === true);
+  await openPanel();
+  await page.keyboard.press('Escape');
+  out.escapeClosed = await page.evaluate(() => !document.querySelector('dialog.fg-settings').open && window.__notReloaded === true);
+
+  await openPanel();
+  await page.getByLabel('YouTube trailer buttons').uncheck();
+  await closeAndReload();
+  await settle();
+  out.panelTrailersOff = { trailers: (await homeState()).trailers, stored: await page.evaluate(() => localStorage.getItem('fg-trailers')) };
+  await openPanel();
+  out.panelRemembersOff = !(await page.getByLabel('YouTube trailer buttons').isChecked());
+  await page.getByLabel('YouTube trailer buttons').check();
+  await page.getByLabel('Dark theme').uncheck();
+  await closeAndReload();
+  await settle();
+  await page.evaluate(() => [...document.querySelectorAll('body *')].filter(e => getComputedStyle(e).position === 'fixed' && /Discover more/.test(e.textContent)).forEach(e => e.remove()));
+  await openPanel();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: shots + '/panel-light.png' });
+  await page.getByLabel('Dark theme').check();
+  await closeAndReload();
+  await settle();
+
   await open('/');
   out.finalState = await homeState();
   out.errors = errors;
