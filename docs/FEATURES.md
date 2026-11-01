@@ -1,5 +1,8 @@
 # Features
 
+## Settings
+- [beta] On/off toggles in the Tampermonkey menu
+
 ## Appearance
 - [stable] Dark theme
 - [beta] Paw and support images recolored in the browser

@@ -9,6 +9,9 @@
 // @run-at       document-start
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_registerMenuCommand
 // @connect      www.youtube.com
 // @license      MIT
 // @downloadURL  https://update.greasyfork.org/scripts/541076/FitGirl%20Power%20Pack.user.js
@@ -24,6 +27,33 @@ function whenDomReady(callback) {
     callback();
   }
 }
+
+/*****************************************************************
+ * SETTINGS (Tampermonkey menu)                                   *
+ *****************************************************************/
+const settings = {
+  darkTheme: 'Dark theme',
+  comments: 'Hide comments behind a button',
+  trailers: 'YouTube trailer buttons',
+  infiniteScroll: 'Infinite scroll',
+  tags: 'Tags page and menu link',
+  donateTables: 'Donate page table fix'
+};
+
+function isEnabled(setting) {
+  return GM_getValue(setting, true);
+}
+
+function whenEnabled(setting, callback) {
+  if (isEnabled(setting)) whenDomReady(callback);
+}
+
+Object.entries(settings).forEach(([setting, label]) => {
+  GM_registerMenuCommand(`${isEnabled(setting) ? '✅' : '⬜'} ${label}`, () => {
+    GM_setValue(setting, !isEnabled(setting));
+    location.reload();
+  });
+});
 
 /*****************************************************************
  * 1. DARK MODE STYLES                                            *
@@ -71,6 +101,7 @@ function showRecoloredPaw(element) {
 }
 
 function replaceImages() {
+  if (!isEnabled('darkTheme')) return;
   const divs = document.querySelectorAll('div[style*="paw.png"]:not(.fg-paw)');
   divs.forEach(div => {
     showRecoloredPaw(div);
@@ -118,6 +149,8 @@ whenDomReady(replaceImages);
 
 (function applyDarkTheme() {
   'use strict';
+
+  if (!isEnabled('darkTheme')) return;
 
   GM_addStyle(`
     :root {
@@ -310,7 +343,7 @@ whenDomReady(replaceImages);
 /*****************************************************************
  * 2. TOLSTOY COMMENTS TOGGLE                                     *
  *****************************************************************/
-whenDomReady(function toggleTolstoyComments(){
+whenEnabled('comments', function toggleTolstoyComments(){
   const selector='iframe[src*="tolstoycomments.com"]';
   function addToggle(){
     const iframe=document.querySelector(selector);
@@ -343,7 +376,7 @@ whenDomReady(function toggleTolstoyComments(){
 /*****************************************************************
  * 3. YOUTUBE TRAILER LINK                                        *
  *****************************************************************/
-whenDomReady(function YouTubeTrailerLinks(){
+whenEnabled('trailers', function YouTubeTrailerLinks(){
     function addYouTubeTrailerLinks() {
         document.querySelectorAll('article').forEach(article => {
             const title = article.querySelector('.entry-title');
@@ -438,7 +471,7 @@ whenDomReady(function YouTubeTrailerLinks(){
 /*****************************************************************
  * 4. INFINITE SCROLL                                            *
  *****************************************************************/
-whenDomReady(function infiniteScroll(){
+whenEnabled('infiniteScroll', function infiniteScroll(){
   let loading=false;
   async function loadNext(){
     if(loading) return;
@@ -468,7 +501,7 @@ whenDomReady(function infiniteScroll(){
  * 45. TAG Injector                                              *
  *****************************************************************/
 
-whenDomReady(async function TagInjecotr() {
+whenEnabled('tags', async function TagInjecotr() {
   'use strict';
 
   if (window.location.pathname.replace(/\/+$/, '') !== '/tags') return;
@@ -532,7 +565,7 @@ whenDomReady(async function TagInjecotr() {
   `;
 });
 
-whenDomReady(function addStandaloneTagsMenuItem() {
+whenEnabled('tags', function addStandaloneTagsMenuItem() {
   const menu = document.querySelector('#primary-menu');
   if (!menu) return;
 
@@ -543,7 +576,7 @@ whenDomReady(function addStandaloneTagsMenuItem() {
   menu.appendChild(li);
 });
 
-whenDomReady(function fixDonatePage() {
+whenEnabled('donateTables', function fixDonatePage() {
   'use strict';
 
   const fixTables = () => {

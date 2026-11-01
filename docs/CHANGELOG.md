@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- You can now turn each feature on or off from the Tampermonkey menu: dark theme, hidden comments, trailer buttons, infinite scroll, tags, and the donate table fix. Everything stays on by default, and the page reloads when you change one.
+
 ## 1.0.7
 - The dark theme now starts before the page draws, so the undarkened page and white images should no longer flash on load.
 - The script no longer downloads jQuery, Babel or the Babel polyfill, so it has about 2 MB less to load.

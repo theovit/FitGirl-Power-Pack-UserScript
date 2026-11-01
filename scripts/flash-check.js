@@ -25,7 +25,7 @@ async (defaultPage) => {
     await context.addInitScript(recorder);
     if (withScript) {
       // A constructed sheet, because this can run before the page has a root element
-      await context.addInitScript({ content: 'window.GM_addStyle = css => { const s = new CSSStyleSheet(); s.replaceSync(css); document.adoptedStyleSheets = [...document.adoptedStyleSheets, s]; }; window.GM_xmlhttpRequest = () => {};' });
+      await context.addInitScript({ content: 'window.GM_addStyle = css => { const s = new CSSStyleSheet(); s.replaceSync(css); document.adoptedStyleSheets = [...document.adoptedStyleSheets, s]; }; window.GM_xmlhttpRequest = () => {}; window.GM_getValue = (k, d) => d; window.GM_setValue = () => {}; window.GM_registerMenuCommand = () => {};' });
       await context.addInitScript({ path: USERSCRIPT });
     }
     const page = await context.newPage();

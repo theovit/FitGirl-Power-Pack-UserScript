@@ -26,7 +26,7 @@ async (defaultPage) => {
   const load = async (path, waitUntil = 'domcontentloaded', prepare) => {
     await page.goto(BASE + path, { waitUntil });
     if (prepare) await page.evaluate(prepare);
-    await page.addScriptTag({ content: 'window.GM_addStyle = css => { const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s); }; window.GM_xmlhttpRequest = o => __fgFetch(o.url).then(t => o.onload({ responseText: t }), () => o.onerror());' });
+    await page.addScriptTag({ content: 'window.GM_addStyle = css => { const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s); }; window.GM_xmlhttpRequest = o => __fgFetch(o.url).then(t => o.onload({ responseText: t }), () => o.onerror()); window.GM_getValue = (k, d) => d; window.GM_setValue = () => {}; window.GM_registerMenuCommand = () => {};' });
     await page.addScriptTag({ path: USERSCRIPT });
   };
   const tagList = () => page.waitForFunction(() => /Tag Index/.test(document.body.textContent), null, { timeout: 30000 })

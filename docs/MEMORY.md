@@ -1,5 +1,6 @@
 # Project Memory
 
+- New features should use `whenEnabled` and get an entry in `settings`. Settings are stored per setting name with `GM_getValue`, so renaming a key resets it for users. `scripts/settings-check.js` tests each toggle.
 - The script runs at `document-start` so the theme beats the first paint. Anything touching page content must go through `whenDomReady`. Don't bring jQuery back: it crashed on load when run before the page had a root element, which stopped the whole script in the early-start test. `scripts/flash-check.js` covers this path.
 - `recolorImage` edits the site's images in a canvas, which works because they're on the same domain as the page. Its values are tuned to the current files: `paw.png` is flat `#fddbff` on white, and the white strip in `support2.jpg` starts at pixel row 124. If either file's design changes, these need retuning.
 - `scripts/live-check.js` skips trailer popups unless `CHECK_TRAILERS` is turned on.
