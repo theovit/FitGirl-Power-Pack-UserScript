@@ -42,8 +42,10 @@ const settings = {
   hideDigests: 'Hide Updates Digest posts on the main page'
 };
 
+const offByDefault = ['hideUncategorized', 'hideDigests'];
+
 function isEnabled(setting) {
-  return GM_getValue(setting, true);
+  return GM_getValue(setting, !offByDefault.includes(setting));
 }
 
 function whenEnabled(setting, callback) {

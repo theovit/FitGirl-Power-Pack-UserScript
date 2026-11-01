@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-- Uncategorized and Updates Digest posts are now hidden on the main page, including the Upcoming Repacks post. Each has its own setting and stays visible on its own page and category page.
+- New optional settings can hide Uncategorized and Updates Digest posts on the main page. Both are off by default, and those posts stay visible on their own pages and category pages.
 - A new Settings link in the site's top menu opens a panel with the same on/off options.
 - You can now turn each feature on or off from the Tampermonkey menu: dark theme, hidden comments, trailer buttons, infinite scroll, tags, and the donate table fix. Everything stays on by default, and the page reloads when you change one.
 
