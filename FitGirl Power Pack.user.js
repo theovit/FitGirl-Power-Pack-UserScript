@@ -6,9 +6,7 @@
 // @author       theovlit
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=fitgirl-repacks.site
 // @match        https://fitgirl-repacks.site/*
-// @require      https://code.jquery.com/jquery-3.4.1.min.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.18.2/babel.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.16.0/polyfill.js
+// @run-at       document-start
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
 // @connect      www.youtube.com
@@ -17,8 +15,15 @@
 // @updateURL    https://update.greasyfork.org/scripts/541076/FitGirl%20Power%20Pack.meta.js
 // ==/UserScript==
 
-/* global jQuery, $ */
-this.$ = this.jQuery = jQuery.noConflict(true);
+// The script starts before the page exists so the theme can beat the first paint;
+// anything that needs page content waits here.
+function whenDomReady(callback) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
 
 /*****************************************************************
  * 1. DARK MODE STYLES                                            *
@@ -108,7 +113,7 @@ function replaceImages() {
   });
 
 }
-replaceImages();
+whenDomReady(replaceImages);
 
 
 (function applyDarkTheme() {
@@ -124,6 +129,18 @@ replaceImages();
       --link-color: #80cbc4;
     }
 
+    /* Keep the originals out of sight until replaceImages has handled them */
+    div[style*="paw.png"]:not(.fg-paw),
+    a[style*="paw.png"]:not(.fg-paw),
+    div[style*="garold"]:not(.fg-garold) {
+      background-image: none !important;
+    }
+
+    img[src$="/support2.jpg"]:not(.fg-support) {
+      visibility: hidden;
+    }
+
+    html,
     body {
       background: var(--background-color) !important;
       color: var(--foreground-color) !important;
@@ -293,7 +310,7 @@ replaceImages();
 /*****************************************************************
  * 2. TOLSTOY COMMENTS TOGGLE                                     *
  *****************************************************************/
-(function toggleTolstoyComments(){
+whenDomReady(function toggleTolstoyComments(){
   const selector='iframe[src*="tolstoycomments.com"]';
   function addToggle(){
     const iframe=document.querySelector(selector);
@@ -321,21 +338,20 @@ replaceImages();
     if(addToggle()) observer.disconnect();
   });
   observer.observe(document.documentElement,{childList:true,subtree:true});
-})();
+});
 
 /*****************************************************************
  * 3. YOUTUBE TRAILER LINK                                        *
  *****************************************************************/
-(function YouTubeTrailerLinks($){
+whenDomReady(function YouTubeTrailerLinks(){
     function addYouTubeTrailerLinks() {
-        $('article').each(function() {
-            const $article = $(this);
-            const $title = $article.find('.entry-title');
+        document.querySelectorAll('article').forEach(article => {
+            const title = article.querySelector('.entry-title');
 
             // Skip if already processed
-            if ($article.find('.nframe').length > 0) return;
+            if (article.querySelector('.nframe')) return;
 
-            const rawTitleText = $title.text();
+            const rawTitleText = title ? title.textContent : '';
 
             // Attempt to extract the clean title using known patterns
             const dashMatch = rawTitleText.match(/^(.*?)(?=\s+\u2013)/); // Matches " –"
@@ -358,72 +374,71 @@ replaceImages();
             const searchUrl = `https://www.youtube.com/results?search_query=${encodedQuery}+trailer+video+game`;
 
             // Find the specific metadata <p> block by style attribute
-            const $metaBlock = $article.find('p[style*="height: 200px"]');
-            if ($metaBlock.length > 0) {
+            article.querySelectorAll('p[style*="height: 200px"]').forEach(metaBlock => {
                 const iconHTML = '<br><a class="nframe entry-meta a" href="' + searchUrl + '" title="YouTube Trailer">' +
                                  '<img src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg" width="20" height="20" style="vertical-align: middle;">' +
                                  '</a>';
-                $metaBlock.append(iconHTML);
-            }
-        });
-
-        // Open links in centered pop-up window
-        $(document).off('click', 'a.nframe').on('click', 'a.nframe', function(e) {
-            e.preventDefault();
-            const url = $(this).attr("href");
-
-            const width = screen.width * 0.75;
-            const height = screen.height * 0.75;
-            const left = (screen.width - width) / 2;
-            const top = (screen.height - height) / 2;
-
-            const params = [
-                `width=${width}`,
-                `height=${height}`,
-                `top=${top}`,
-                `left=${left}`,
-                'directories=no',
-                'location=no',
-                'menubar=no',
-                'resizable=yes',
-                'scrollbars=no',
-                'status=no',
-                'toolbar=no'
-            ].join(', ');
-
-            // Open before the lookup so the click still counts and popup blockers allow it
-            const newWindow = window.open('about:blank', 'subpop', params);
-            if (!newWindow) return false;
-            if (window.focus) newWindow.focus();
-
-            // Go to the first video, or the search results if none can be found
-            const openVideo = response => {
-                const match = response && response.responseText.match(/"videoRenderer":\{"videoId":"([\w-]{11})"/);
-                newWindow.location.href = match ? `https://www.youtube.com/watch?v=${match[1]}` : url;
-            };
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url,
-                timeout: 10000,
-                onload: openVideo,
-                onerror: () => openVideo(),
-                ontimeout: () => openVideo()
+                metaBlock.insertAdjacentHTML('beforeend', iconHTML);
             });
-
-            return false;
         });
     }
+
+    // Open links in centered pop-up window
+    document.addEventListener('click', e => {
+        const link = e.target.closest('a.nframe');
+        if (!link) return;
+        e.preventDefault();
+        const url = link.getAttribute('href');
+
+        const width = screen.width * 0.75;
+        const height = screen.height * 0.75;
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+
+        const params = [
+            `width=${width}`,
+            `height=${height}`,
+            `top=${top}`,
+            `left=${left}`,
+            'directories=no',
+            'location=no',
+            'menubar=no',
+            'resizable=yes',
+            'scrollbars=no',
+            'status=no',
+            'toolbar=no'
+        ].join(', ');
+
+        // Open before the lookup so the click still counts and popup blockers allow it
+        const newWindow = window.open('about:blank', 'subpop', params);
+        if (!newWindow) return;
+        if (window.focus) newWindow.focus();
+
+        // Go to the first video, or the search results if none can be found
+        const openVideo = response => {
+            const match = response && response.responseText.match(/"videoRenderer":\{"videoId":"([\w-]{11})"/);
+            newWindow.location.href = match ? `https://www.youtube.com/watch?v=${match[1]}` : url;
+        };
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url,
+            timeout: 10000,
+            onload: openVideo,
+            onerror: () => openVideo(),
+            ontimeout: () => openVideo()
+        });
+    });
 
     // Run initially and every 2 seconds to catch new content
     addYouTubeTrailerLinks();
     setInterval(addYouTubeTrailerLinks, 2000);
 
-})(jQuery);
+});
 
 /*****************************************************************
  * 4. INFINITE SCROLL                                            *
  *****************************************************************/
-(function infiniteScroll(){
+whenDomReady(function infiniteScroll(){
   let loading=false;
   async function loadNext(){
     if(loading) return;
@@ -447,13 +462,13 @@ replaceImages();
     if(!next) return;
     if(next.getBoundingClientRect().top<window.innerHeight+300) loadNext();
   });
-})();
+});
 
 /*****************************************************************
  * 45. TAG Injector                                              *
  *****************************************************************/
 
-(async function TagInjecotr() {
+whenDomReady(async function TagInjecotr() {
   'use strict';
 
   if (window.location.pathname.replace(/\/+$/, '') !== '/tags') return;
@@ -515,9 +530,9 @@ replaceImages();
       ).join('')}
     </ul>
   `;
-})();
+});
 
-(function addStandaloneTagsMenuItem() {
+whenDomReady(function addStandaloneTagsMenuItem() {
   const menu = document.querySelector('#primary-menu');
   if (!menu) return;
 
@@ -526,9 +541,9 @@ replaceImages();
   li.innerHTML = `<a href="https://fitgirl-repacks.site/tags">Tags</a>`;
 
   menu.appendChild(li);
-})();
+});
 
-(function fixDonatePage() {
+whenDomReady(function fixDonatePage() {
   'use strict';
 
   const fixTables = () => {
@@ -560,4 +575,4 @@ replaceImages();
   };
 
   fixTables();
-})();
+});

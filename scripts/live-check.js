@@ -26,7 +26,6 @@ async (defaultPage) => {
   const load = async (path, waitUntil = 'domcontentloaded', prepare) => {
     await page.goto(BASE + path, { waitUntil });
     if (prepare) await page.evaluate(prepare);
-    await page.addScriptTag({ url: 'https://code.jquery.com/jquery-3.4.1.min.js' });
     await page.addScriptTag({ content: 'window.GM_addStyle = css => { const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s); }; window.GM_xmlhttpRequest = o => __fgFetch(o.url).then(t => o.onload({ responseText: t }), () => o.onerror());' });
     await page.addScriptTag({ path: USERSCRIPT });
   };

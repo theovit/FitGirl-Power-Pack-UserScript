@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- The dark theme now starts before the page draws, so the undarkened page and white images should no longer flash on load.
+- The script no longer downloads jQuery, Babel or the Babel polyfill, so it has about 2 MB less to load.
+
 ## 1.0.6
 - The paw and support images are now recolored in the browser from the site's own files, so the script no longer loads any images from GitHub.
 - The support image now shows the site's own wording, with a capital "P" in "Please".
