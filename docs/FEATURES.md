@@ -3,7 +3,7 @@
 ## Appearance
 - [stable] Dark theme
 - [stable] Dark paw and support images
-- [beta] Blended Upcoming Repacks image (`garold3.jpg`)
+- [beta] Blended images with `garold` in the filename
 
 ## Browsing
 - [stable] Infinite scroll

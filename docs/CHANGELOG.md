@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- The dark blend now applies to any Upcoming Repacks image with `garold` in its filename, so a new image from the site shouldn't need a script update.
+
 ## 1.0.5
 - The kitten on the Upcoming Repacks page now blends into the dark theme and fades out at the edges, instead of sitting on a bright white box.
 

@@ -39,13 +39,17 @@ function replaceImages() {
     el.style.backgroundRepeat = 'no-repeat'; // Optional: ensure no repeating
     el.style.backgroundPosition = 'top right'; // Optional: keep original alignment
   });
-  const garold = document.querySelectorAll('div[style*="garold1-1.jpg"]');
+  // Blend whichever garold image the page has, so new filenames need no script update
+  const garold = document.querySelectorAll('div[style*="garold"]:not(.fg-garold)');
   garold.forEach(div => {
-    div.style.backgroundImage = 'url(https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/garold1-1-dark.jpg)';
-    div.style.backgroundSize = '657px auto'; // You can adjust this value
-    div.style.backgroundRepeat = 'no-repeat'; // Optional: ensure no repeating
-    div.style.backgroundPosition = 'top right'; // Optional: keep original alignment
-    div.style.backgroundPositionY = '-30px'; // shift image down
+    const { backgroundImage, backgroundPosition, backgroundRepeat } = div.style;
+    div.classList.add('fg-garold');
+    // The glow stops short of the right edge, where the scrollbar sits
+    div.style.backgroundImage = `${backgroundImage}, radial-gradient(ellipse 36% 48% at 60% 52%, #777 0%, #737373 20%, #666 38%, #505050 56%, #393939 72%, #272727 86%, #1e1e1e 94%, #1a1a1a 100%)`;
+    div.style.backgroundPosition = `${backgroundPosition || '0 0'}, 0 0`;
+    div.style.backgroundRepeat = `${backgroundRepeat || 'repeat'}, repeat`;
+    div.style.backgroundBlendMode = 'multiply';
+    div.style.scrollbarColor = '#555 #1a1a1a';
   });
     document.querySelectorAll('img[src="https://fitgirl-repacks.site/wp-content/uploads/2024/05/support2.jpg"]').forEach(img => {
   img.src = 'https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/support2-dark.jpg';
@@ -226,15 +230,6 @@ replaceImages();
 
     #content h3 div {
       background-image: none;
-    }
-
-    /* The glow stops short of the right edge, where the image lightens and the scrollbar sits */
-    div[style*="garold3.jpg"] {
-      background:
-        url(https://fitgirl-repacks.site/wp-content/uploads/2021/10/garold3.jpg) no-repeat right -30px,
-        radial-gradient(ellipse 36% 48% at 60% 52%,#777 0%, #737373 20%, #666 38%, #505050 56%, #393939 72%, #272727 86%, #1e1e1e 94%, #1a1a1a 100%) !important;
-      background-blend-mode: multiply;
-      scrollbar-color: #555 #1a1a1a;
     }
 
     .content-sidebar {

@@ -23,8 +23,9 @@ async (defaultPage) => {
     }
   });
 
-  const load = async (path, waitUntil = 'domcontentloaded') => {
+  const load = async (path, waitUntil = 'domcontentloaded', prepare) => {
     await page.goto(BASE + path, { waitUntil });
+    if (prepare) await page.evaluate(prepare);
     await page.addScriptTag({ url: 'https://code.jquery.com/jquery-3.4.1.min.js' });
     await page.addScriptTag({ content: 'window.GM_addStyle = css => { const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s); }; window.GM_xmlhttpRequest = o => __fgFetch(o.url).then(t => o.onload({ responseText: t }), () => o.onerror());' });
     await page.addScriptTag({ path: USERSCRIPT });
@@ -50,6 +51,30 @@ async (defaultPage) => {
     out.trailers.push({ game: game.slice(0, 50), url: popup.url(), video: (await popup.title()).slice(0, 70) });
     await popup.close();
   }
+
+  // A renamed image and a repeat run, like the site changing files and infinite scroll
+  const garoldState = () => page.evaluate(() => {
+    const el = document.querySelector('.fg-garold');
+    const image = el.style.backgroundImage;
+    return {
+      images: (image.match(/garold/g) || []).length,
+      gradients: (image.match(/radial-gradient/g) || []).length,
+      url: image.slice(0, 80),
+      position: el.style.backgroundPosition,
+      repeat: el.style.backgroundRepeat,
+      blend: getComputedStyle(el).backgroundBlendMode,
+    };
+  });
+  await load('/upcoming-repacks-10/');
+  out.garoldCurrent = await garoldState();
+  await page.route('**/garold99.jpg', route => route.continue({ url: route.request().url().replace('garold99', 'garold3') }));
+  await load('/upcoming-repacks-10/', 'domcontentloaded', () => {
+    const el = document.querySelector('[style*="garold3"]');
+    el.setAttribute('style', el.getAttribute('style').replace('garold3', 'garold99'));
+  });
+  await page.evaluate(() => replaceImages());
+  out.garoldRenamedTwice = await garoldState();
+  await page.unroute('**/garold99.jpg');
 
   await load('/tags/');
   out.tagsTrailingSlash = await tagList();
