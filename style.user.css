@@ -38,6 +38,10 @@ a:visited {
 }
 
 
+.site-content .entry-summary {
+	background-color: var(--secondary-bg-color)
+}
+
 .content-sidebar {
 	background-color: black
 }
@@ -113,6 +117,14 @@ span[style*="color: black"] {
 	background-color: unset !important;
 }
 
+header.entry-header,
+div.entry-content,
+div.entry-meta {
+	margin: 0px !important;
+	max-width: 1000px !important;
+}
+
+
 .site-header {
 	max-width: 1519px;
 	border: 1px solid var(--border-color);
@@ -138,6 +150,9 @@ body article {
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
 }
 
+.su-spoiler-contnet {
+	hyphens: none !important;
+}
 
 #page {
 	width: 95%;

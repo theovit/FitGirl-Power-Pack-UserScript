@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FitGirl Power Pack
 // @namespace    https://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Dark theme, optional comments toggle, YouTube trailer link, infinite scroll, and a tag page – all in one userscript for FitGirl‑Repacks.
 // @author       theovlit
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=fitgirl-repacks.site
@@ -10,6 +10,9 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.18.2/babel.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.16.0/polyfill.js
 // @grant        GM_addStyle
+// @license      MIT
+// @downloadURL  https://update.greasyfork.org/scripts/541076/FitGirl%20Power%20Pack.user.js
+// @updateURL    https://update.greasyfork.org/scripts/541076/FitGirl%20Power%20Pack.meta.js
 // ==/UserScript==
 
 /* global jQuery, $ */
@@ -93,6 +96,10 @@ replaceImages();
     }
 
 
+   .site-content .entry-summary {
+     background-color: var(--secondary-bg-color)
+   }
+
    .content-sidebar {
      background-color: black
    }
@@ -168,6 +175,12 @@ replaceImages();
       background-color: unset !important;
     }
 
+    header.entry-header, div.entry-content, div.entry-meta {
+      margin: 0px !important;
+      max-width: 1000px !important;
+    }
+
+
     .site-header {
       max-width: 1519px;
       border: 1px solid var(--border-color);
@@ -193,6 +206,9 @@ replaceImages();
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
     }
 
+   .su-spoiler-contnet {
+     hyphens: none !important;
+   }
 
     #page {
       width: 95%;
