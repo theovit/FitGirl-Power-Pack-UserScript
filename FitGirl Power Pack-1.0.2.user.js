@@ -18,7 +18,7 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 /*****************************************************************
  * 1. DARK MODE STYLES                                            *
  *****************************************************************/
-(function replaceImages() {
+function replaceImages() {
   const divs = document.querySelectorAll('div[style*="paw.png"]');
   divs.forEach(div => {
     div.style.backgroundImage = 'url(https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/paw_dark.png)';
@@ -46,7 +46,8 @@ this.$ = this.jQuery = jQuery.noConflict(true);
   img.src = 'https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/support2-dark.jpg';
 });
 
-})();
+}
+replaceImages();
 
 
 (function applyDarkTheme() {
@@ -340,6 +341,7 @@ this.$ = this.jQuery = jQuery.noConflict(true);
       const nav=document.querySelector('nav.navigation');
       const parent=nav?nav.parentNode:document.querySelector('main')||document.body;
       articles.forEach(a=>parent.insertBefore(a,nav||null));
+      replaceImages();
       const newNext=doc.querySelector('a.next.page-numbers');
       if(newNext&&next){next.href=newNext.href;} else if(next){next.remove();}
     }catch(err){console.error('FG infinite scroll error',err);} finally{loading=false;}
