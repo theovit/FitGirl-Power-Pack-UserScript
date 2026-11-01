@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.7
 - The dark theme now starts before the page draws, so the undarkened page and white images should no longer flash on load.
 - The script no longer downloads jQuery, Babel or the Babel polyfill, so it has about 2 MB less to load.
 
