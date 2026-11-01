@@ -400,19 +400,26 @@ replaceImages();
   let page = 1;
   let allTags = [];
   let hasMore = true;
+  let failed = false;
 
-  while (hasMore) {
-    const res = await fetch(`https://fitgirl-repacks.site/wp-json/wp/v2/tags?per_page=${perPage}&page=${page}`);
-    if (!res.ok) break;
-    const tags = await res.json();
-    allTags.push(...tags);
-    hasMore = tags.length === perPage;
-    page++;
+  try {
+    while (hasMore) {
+      const res = await fetch(`https://fitgirl-repacks.site/wp-json/wp/v2/tags?per_page=${perPage}&page=${page}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const tags = await res.json();
+      allTags.push(...tags);
+      hasMore = tags.length === perPage;
+      page++;
+    }
+  } catch (err) {
+    failed = true;
+    console.error('FG tag fetch error', err);
   }
 
   // Replace "Loading…" with actual tag list
   tagContainer.innerHTML = `
     <h2 style="color:#f887ff;">Tag Index (${allTags.length})</h2>
+    ${failed ? '<p style="color:#ff8a80;">Some tags could not be loaded. Reload the page to try again.</p>' : ''}
     <ul style="list-style:none;padding-left:0;line-height:1.6;">
       ${allTags.map(tag =>
         `<li><a href="https://fitgirl-repacks.site/tag/${tag.slug}/" style="color:#80cbc4;text-decoration:none;" target="_blank">${tag.name}</a></li>`
