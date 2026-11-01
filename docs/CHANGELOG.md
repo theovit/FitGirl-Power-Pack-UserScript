@@ -1,6 +1,7 @@
 # Changelog
 
-## 1.0.4 (unreleased)
+## 1.0.4
+- The script file is now `FitGirl Power Pack.user.js`, so its GitHub URL stays the same between versions.
 - The repo now includes the layout and spoiler changes from the published 1.0.3 script.
 - The spoiler hyphenation rule now takes effect; a misspelled selector had disabled it.
 - Trailer buttons now open the first matching YouTube video in the popup, instead of a DuckDuckGo search. If no video can be found, they open YouTube's search results.

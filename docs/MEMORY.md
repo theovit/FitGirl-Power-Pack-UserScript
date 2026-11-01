@@ -1,6 +1,7 @@
 # Project Memory
 
 - Installed copies update from Greasy Fork (script 541076), so pushing to GitHub alone may not reach them. Check that the Greasy Fork version matches before choosing the next version number.
+- Greasy Fork sync depends on the raw GitHub URL of `FitGirl Power Pack.user.js`, so don't rename that file or put the version back in its name. Bump `@version` on every release.
 - Don't rely on DuckDuckGo `!` bang redirects: one went straight to YouTube in a test browser, but the user got a search page. Trailers now read the first `videoRenderer` ID from YouTube's search HTML, and that markup could change.
 - YouTube's top result isn't always the base game's trailer; it can be a season, expansion or console edition trailer.
 - Paw images inside posts are rare: of the listing pages sampled on 2026-11-01, only `/page/50/` had one. Test infinite scroll from `/page/49/`.

@@ -1,11 +1,11 @@
 /*
  * Runs the userscript against the live site and reports what each fix did.
- * Input: none; edit USERSCRIPT if the versioned filename changes.
+ * Input: none.
  * Usage: Playwright MCP browser_close, then browser_run_code_unsafe with filename set to this file.
  * Injects after DOMContentLoaded with a GM_addStyle shim, not through Tampermonkey.
  */
 async (page) => {
-  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack-1.0.4.user.js';
+  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
   const BASE = 'https://fitgirl-repacks.site';
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
