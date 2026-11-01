@@ -1,17 +1,20 @@
 /*
  * Runs the userscript against the live site and reports what each fix did.
  * Input: none.
- * Usage: Playwright MCP browser_close, then browser_run_code_unsafe with filename set to this file.
- * Injects after DOMContentLoaded with a GM_addStyle shim, not through Tampermonkey.
+ * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Injects after DOMContentLoaded with GM_* shims, not through Tampermonkey.
+ * Uses its own full-window context, because the default one is locked to a fixed viewport.
  */
-async (page) => {
+async (defaultPage) => {
+  const context = await defaultPage.context().browser().newContext({ viewport: null });
+  const page = await context.newPage();
   const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
   const BASE = 'https://fitgirl-repacks.site';
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   // A real tab, because page.request fails on YouTube's large response headers
   await page.exposeFunction('__fgFetch', async url => {
-    const tab = await page.context().newPage();
+    const tab = await context.newPage();
     try {
       await tab.goto(url, { waitUntil: 'domcontentloaded' });
       return await tab.content();
@@ -100,5 +103,6 @@ async (page) => {
   });
 
   out.pageErrors = errors;
+  await context.close();
   return out;
 }
