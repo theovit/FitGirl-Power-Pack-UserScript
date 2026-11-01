@@ -38,18 +38,22 @@ async (defaultPage) => {
     })));
   const out = {};
 
-  await load('/');
-  await page.waitForSelector('a.nframe');
-  out.trailers = [];
-  const trailerLinks = await page.locator('a.nframe').count();
-  for (let i = 0; i < trailerLinks; i++) {
-    const link = page.locator('a.nframe').nth(i);
-    const game = await link.evaluate(a => a.closest('article').querySelector('.entry-title').textContent);
-    const [popup] = await Promise.all([page.waitForEvent('popup'), link.click()]);
-    await popup.waitForURL(/youtube\.com\/(watch|results)/, { timeout: 30000 });
-    await popup.waitForTimeout(1500);
-    out.trailers.push({ game: game.slice(0, 50), url: popup.url(), video: (await popup.title()).slice(0, 70) });
-    await popup.close();
+  // Off by default so routine runs skip the YouTube searches; turn on after changing trailer code
+  const CHECK_TRAILERS = false;
+  if (CHECK_TRAILERS) {
+    await load('/');
+    await page.waitForSelector('a.nframe');
+    out.trailers = [];
+    const trailerLinks = await page.locator('a.nframe').count();
+    for (let i = 0; i < trailerLinks; i++) {
+      const link = page.locator('a.nframe').nth(i);
+      const game = await link.evaluate(a => a.closest('article').querySelector('.entry-title').textContent);
+      const [popup] = await Promise.all([page.waitForEvent('popup'), link.click()]);
+      await popup.waitForURL(/youtube\.com\/(watch|results)/, { timeout: 30000 });
+      await popup.waitForTimeout(1500);
+      out.trailers.push({ game: game.slice(0, 50), url: popup.url(), video: (await popup.title()).slice(0, 70) });
+      await popup.close();
+    }
   }
 
   // A renamed image and a repeat run, like the site changing files and infinite scroll
@@ -111,8 +115,9 @@ async (defaultPage) => {
     before: n,
     after: document.querySelectorAll('article').length,
     lightPawLeft: document.querySelectorAll('div[style*="paw.png"]').length,
-    darkPaw: document.querySelectorAll('article [style*="paw_dark.png"]').length,
-    articlePawStyles: [...document.querySelectorAll('article [style*="paw"]')].map(e => e.tagName + ' ' + (e.getAttribute('style').match(/url\([^)]*\)/) || [''])[0]),
+    recoloredPaws: [...document.querySelectorAll('article .fg-paw')].filter(e => e.style.backgroundImage.startsWith('url("data:image/png')).length,
+    supportRecolored: document.querySelector('img.fg-support')?.src.startsWith('data:image/png'),
+    repoImages: [...document.querySelectorAll('[style*="raw.githubusercontent"], img[src*="raw.githubusercontent"]')].length,
     trailerLinks: document.querySelectorAll('a.nframe').length,
   }), before);
 

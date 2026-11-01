@@ -2,7 +2,7 @@
 
 ## Appearance
 - [stable] Dark theme
-- [stable] Dark paw and support images
+- [beta] Paw and support images recolored in the browser
 - [beta] Blended images with `garold` in the filename
 
 ## Browsing

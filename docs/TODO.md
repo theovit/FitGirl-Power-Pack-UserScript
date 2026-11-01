@@ -1,8 +1,7 @@
 # TODO
 
 ## Medium
-- Delete `garold1-1-dark.jpg` once older installed copies have updated; versions before the general blend still load it
-- Try the CSS blend on the paw and support images, then retire their dark copies
+- Delete `garold1-1-dark.jpg`, `paw_dark.png`, `paw_black_bg.png` and `support2-dark.jpg` once older installed copies have updated; they still load these from GitHub
 
 ## Low
 - Remove the unused Babel and polyfill `@require` lines

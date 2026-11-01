@@ -23,18 +23,60 @@ this.$ = this.jQuery = jQuery.noConflict(true);
 /*****************************************************************
  * 1. DARK MODE STYLES                                            *
  *****************************************************************/
+const recoloredImages = {};
+
+// Makes white transparent and paints everything else one colour, starting at fromRow.
+// darkest is the channel value that counts as fully painted, so pale artwork can still come out solid.
+function recolorImage(src, color, darkest, fromRow = 0) {
+  if (!recoloredImages[src]) {
+    recoloredImages[src] = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext('2d');
+        context.drawImage(image, 0, 0);
+        const pixels = context.getImageData(0, fromRow, canvas.width, canvas.height - fromRow);
+        for (let i = 0; i < pixels.data.length; i += 4) {
+          const channel = Math.min(pixels.data[i], pixels.data[i + 1], pixels.data[i + 2]);
+          pixels.data.set(color, i);
+          pixels.data[i + 3] = 255 * Math.min(1, (255 - channel) / (255 - darkest));
+        }
+        context.putImageData(pixels, 0, fromRow);
+        resolve(canvas.toDataURL());
+      };
+      image.onerror = reject;
+      image.src = src;
+    });
+  }
+  return recoloredImages[src];
+}
+
+function showRecoloredPaw(element) {
+  const original = element.style.backgroundImage;
+  element.classList.add('fg-paw');
+  element.style.backgroundImage = 'none';
+  recolorImage('https://fitgirl-repacks.site/wp-content/uploads/2022/08/paw.png', [233, 160, 226], 219).then(url => {
+    element.style.backgroundImage = `url(${url})`;
+  }).catch(err => {
+    console.error('FG paw recolor error', err);
+    element.style.backgroundImage = original;
+  });
+}
+
 function replaceImages() {
-  const divs = document.querySelectorAll('div[style*="paw.png"]');
+  const divs = document.querySelectorAll('div[style*="paw.png"]:not(.fg-paw)');
   divs.forEach(div => {
-    div.style.backgroundImage = 'url(https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/paw_dark.png)';
+    showRecoloredPaw(div);
     div.style.backgroundSize = '213px auto'; // You can adjust this value
     div.style.backgroundRepeat = 'no-repeat'; // Optional: ensure no repeating
     div.style.backgroundPosition = 'top right'; // Optional: keep original alignment
     div.style.backgroundPositionY = '100px'; // shift image down
   });
-  const PPA = document.querySelectorAll('a[href="https://fitgirl-repacks.site/games-with-my-personal-pink-paw-award/"]');
+  const PPA = document.querySelectorAll('a[href="https://fitgirl-repacks.site/games-with-my-personal-pink-paw-award/"]:not(.fg-paw)');
   PPA.forEach(el => {
-    el.style.backgroundImage = 'url(https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/paw_black_bg.png)';
+    showRecoloredPaw(el);
     el.style.backgroundSize = '71px auto'; // You can adjust this value
     el.style.backgroundRepeat = 'no-repeat'; // Optional: ensure no repeating
     el.style.backgroundPosition = 'top right'; // Optional: keep original alignment
@@ -51,9 +93,19 @@ function replaceImages() {
     div.style.backgroundBlendMode = 'multiply';
     div.style.scrollbarColor = '#555 #1a1a1a';
   });
-    document.querySelectorAll('img[src="https://fitgirl-repacks.site/wp-content/uploads/2024/05/support2.jpg"]').forEach(img => {
-  img.src = 'https://raw.githubusercontent.com/theovit/FitGirl-Power-Pack-UserScript/refs/heads/main/support2-dark.jpg';
-});
+  const supportImage = 'https://fitgirl-repacks.site/wp-content/uploads/2024/05/support2.jpg';
+  document.querySelectorAll(`img[src="${supportImage}"]:not(.fg-support)`).forEach(img => {
+    img.classList.add('fg-support');
+    img.style.visibility = 'hidden';
+    // Only the white strip under the photo changes
+    recolorImage(supportImage, [248, 135, 255], 120, 124).then(url => {
+      img.src = url;
+    }).catch(err => {
+      console.error('FG support image recolor error', err);
+    }).finally(() => {
+      img.style.visibility = '';
+    });
+  });
 
 }
 replaceImages();
@@ -114,12 +166,8 @@ replaceImages();
      margin-top: 18px;
    }
 
-   img[src*="support2-dark.jpg"] {
+   img.fg-support {
    margin: 18px 0 0 0 !important;
-   }
-
-   div[style*="paw_dark.png"] {
-     background-size: 346px;
    }
 
     .su-spoiler-style-fancy > .su-spoiler-content {
