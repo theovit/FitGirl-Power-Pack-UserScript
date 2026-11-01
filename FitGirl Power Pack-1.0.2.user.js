@@ -470,6 +470,5 @@ replaceImages();
     });
   };
 
-  // Run on load
-  window.addEventListener('load', fixTables);
+  fixTables();
 })();
