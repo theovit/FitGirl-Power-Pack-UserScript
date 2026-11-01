@@ -367,7 +367,7 @@ replaceImages();
 (async function TagInjecotr() {
   'use strict';
 
-  if (window.location.pathname !== '/tags') return;
+  if (window.location.pathname.replace(/\/+$/, '') !== '/tags') return;
 
   // Update <title> tag in <head>
   document.title = 'Tags - FitGirl Repacks';
