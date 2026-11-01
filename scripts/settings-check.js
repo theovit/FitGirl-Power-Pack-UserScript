@@ -80,6 +80,29 @@ async (defaultPage) => {
     await click(label);
     out[label] = { whileOff: off, afterTurningBackOn: await check() };
   }
+  // Hidden categories, on the main page, through infinite scroll, and elsewhere
+  const visible = category => page.evaluate(category => [...document.querySelectorAll('article.category-' + category)].filter(a => a.offsetParent !== null).length, category);
+  const total = category => page.locator('article.category-' + category).count();
+  await open('/');
+  out.hiddenByDefault = { uncategorized: [await visible('uncategorized'), await total('uncategorized')], digests: [await visible('updates-digest'), await total('updates-digest')] };
+  await page.locator('a.next.page-numbers').scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => document.querySelectorAll('article').length > 10, null, { timeout: 30000 });
+  await page.waitForTimeout(500);
+  out.hiddenAfterScroll = { articles: await page.locator('article').count(), digests: [await visible('updates-digest'), await total('updates-digest')] };
+  await open('/page/2/');
+  out.hiddenOnPage2 = { digests: [await visible('updates-digest'), await total('updates-digest')] };
+  await open('/category/updates-digest/');
+  out.shownOnDigestCategory = await visible('updates-digest');
+  await open('/upcoming-repacks-10/');
+  out.shownOnSinglePost = await visible('uncategorized');
+  await open('/');
+  await click('Hide Uncategorized');
+  out.uncategorizedOff = { uncategorized: await visible('uncategorized'), digests: await visible('updates-digest') };
+  await click('Hide Uncategorized');
+  await click('Hide Updates Digest');
+  out.digestsOff = { uncategorized: await visible('uncategorized'), digests: await visible('updates-digest') };
+  await click('Hide Updates Digest');
+
   // The on-page panel, using real clicks
   const shots = 'C:/Users/Andrew/AppData/Local/Temp/claude/D--GitHub/a85b545d-3b74-4545-b5ad-f306bf0b875c/scratchpad';
   const openPanel = async () => {

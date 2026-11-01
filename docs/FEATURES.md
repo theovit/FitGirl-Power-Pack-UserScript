@@ -10,6 +10,7 @@
 - [beta] Blended images with `garold` in the filename
 
 ## Browsing
+- [beta] Hide Uncategorized and Updates Digest posts on the main page
 - [stable] Infinite scroll
 - [stable] YouTube trailer links open the video directly
 - [stable] Comments show/hide button

@@ -37,7 +37,9 @@ const settings = {
   trailers: 'YouTube trailer buttons',
   infiniteScroll: 'Infinite scroll',
   tags: 'Tags page and menu link',
-  donateTables: 'Donate page table fix'
+  donateTables: 'Donate page table fix',
+  hideUncategorized: 'Hide Uncategorized posts on the main page',
+  hideDigests: 'Hide Updates Digest posts on the main page'
 };
 
 function isEnabled(setting) {
@@ -54,6 +56,11 @@ Object.entries(settings).forEach(([setting, label]) => {
     location.reload();
   });
 });
+
+// CSS rather than removal, so posts added later by infinite scroll are covered too.
+// The site keeps the home class on every main page, including /page/2/ and on.
+if (isEnabled('hideUncategorized')) GM_addStyle('body.home article.category-uncategorized { display: none; }');
+if (isEnabled('hideDigests')) GM_addStyle('body.home article.category-updates-digest { display: none; }');
 
 // Styled on its own so the panel stays readable with the dark theme turned off
 GM_addStyle(`
