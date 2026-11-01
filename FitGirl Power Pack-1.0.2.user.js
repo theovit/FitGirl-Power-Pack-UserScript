@@ -6,7 +6,6 @@
 // @author       theovlit
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=fitgirl-repacks.site
 // @match        https://fitgirl-repacks.site/*
-// @include      https://duckduckgo.com/*
 // @require      https://code.jquery.com/jquery-3.4.1.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.18.2/babel.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.16.0/polyfill.js
@@ -321,13 +320,6 @@ this.$ = this.jQuery = jQuery.noConflict(true);
     // Run initially and every 2 seconds to catch new content
     addYouTubeTrailerLinks();
     setInterval(addYouTubeTrailerLinks, 2000);
-
-    // Auto-trigger DuckDuckGo search if on results page
-    const isDuckDuckGo = window.location.host === 'duckduckgo.com';
-    const autoTriggerPattern = /^! site:youtube\.com/;
-    if (isDuckDuckGo && autoTriggerPattern.test(document.title)) {
-        $("#search_button").click();
-    }
 
 })(jQuery);
 
