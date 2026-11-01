@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.6
 - The paw and support images are now recolored in the browser from the site's own files, so the script no longer loads any images from GitHub.
 - The support image now shows the site's own wording, with a capital "P" in "Please".
 - The dark blend now applies to any Upcoming Repacks image with `garold` in its filename, so a new image from the site shouldn't need a script update.
