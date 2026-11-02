@@ -577,6 +577,7 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
     const next=document.querySelector('a.next.page-numbers');
     if(!next) return;
     loading=true;
+    let loaded=false;
     try{
       const html=await (await fetch(next.href)).text();
       const doc=new DOMParser().parseFromString(html,'text/html');
@@ -587,13 +588,19 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
       replaceImages();
       const newNext=doc.querySelector('a.next.page-numbers');
       if(newNext&&next){next.href=newNext.href;} else if(next){next.remove();}
+      loaded=true;
     }catch(err){console.error('FG infinite scroll error',err);} finally{loading=false;}
+    // Scrolling during a load is ignored, so check again; not after errors, to avoid retrying forever
+    if(loaded) loadIfNearEnd();
   }
-  window.addEventListener('scroll',()=>{
+  function loadIfNearEnd(){
     const next=document.querySelector('a.next.page-numbers');
     if(!next) return;
-    if(next.getBoundingClientRect().top<window.innerHeight+300) loadNext();
-  });
+    // Start while the end of the page is still two screens away
+    if(next.getBoundingClientRect().top<window.innerHeight*3) loadNext();
+  }
+  window.addEventListener('scroll',loadIfNearEnd);
+  loadIfNearEnd();
 });
 
 /*****************************************************************
