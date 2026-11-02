@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- The right sidebar now shows on every page at the same size as the main page, including FAQ, Donate, Popular Repacks and the Tags page. It can be turned off in settings.
+
 ## 1.0.11
 - A back to top button now appears once you've scrolled down more than one screen. It can be turned off in settings.
 - Filtering no longer stacks donate boxes at the top of the list. A post's donate box now hides along with it, and stays when the post is shown.

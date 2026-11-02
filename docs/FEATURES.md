@@ -5,6 +5,7 @@
 - [beta] Settings panel from the site's top menu
 
 ## Appearance
+- [beta] Right sidebar on every page
 - [stable] Dark theme
 - [beta] Paw and support images recolored in the browser
 - [beta] Blended images with `garold` in the filename

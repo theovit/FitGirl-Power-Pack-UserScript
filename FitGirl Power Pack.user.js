@@ -42,7 +42,8 @@ const settings = {
   hideDigests: 'Hide Updates Digest posts on the main page',
   hideHypervisor: 'Hide Hypervisor Bypass posts on the main page',
   gameFilter: 'Tag filter on post lists',
-  backToTop: 'Back to top button'
+  backToTop: 'Back to top button',
+  rightSidebar: 'Right sidebar on every page'
 };
 
 const offByDefault = ['hideUncategorized', 'hideDigests', 'hideHypervisor'];
@@ -310,6 +311,16 @@ whenEnabled('gameFilter', function tagFilterBar() {
   bar.open = filters.filterInclude.length + filters.filterExclude.length > 0;
   render();
 });
+
+// The site hides this sidebar on plain pages like the FAQ, and "not found" pages, which
+// include /tags, miss the sizing the main page gets. These are the main page's values.
+if (isEnabled('rightSidebar')) {
+  GM_addStyle(`
+    #content-sidebar { display: block !important; margin-left: -23% !important; width: 23% !important; padding-top: 0 !important; }
+    /* Popular Repacks widens this grid for its own list, which would also stretch the sidebar's */
+    #content-sidebar .widgets-grid-layout { width: 100% !important; }
+  `);
+}
 
 // Styled on its own so the panel stays readable with the dark theme turned off
 GM_addStyle(`
