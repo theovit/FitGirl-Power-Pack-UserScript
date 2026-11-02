@@ -17,6 +17,7 @@ A userscript that adds a dark theme and browsing tools to FitGirl Repacks.
 - **Tags page:** every tag on the site, at `/tags`, with a link in the top menu.
 - **Right sidebar on every page:** at the same size as on the main page.
 - **Back to top button:** appears once you've scrolled down.
+- **Jump between posts:** on post lists, Page Up and Page Down put the previous or next post at the top of the screen.
 - **Hide options:** optionally hide Uncategorized, Updates Digest or Hypervisor Bypass posts on the main page.
 
 ## Settings

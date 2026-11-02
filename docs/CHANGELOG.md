@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- On post lists, Page Down and Page Up now jump to the next or previous post, placing it at the top of the screen. It can be turned off in settings.
+
 ## 1.0.14
 - The Tags page now uses the saved tag list too, so it appears instantly after the first load. Refresh tags updates it, and a failed load shows the saved list or a clear error.
 

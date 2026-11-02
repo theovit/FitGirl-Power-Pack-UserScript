@@ -43,7 +43,8 @@ const settings = {
   hideHypervisor: 'Hide Hypervisor Bypass posts on the main page',
   gameFilter: 'Tag filter on post lists',
   backToTop: 'Back to top button',
-  rightSidebar: 'Right sidebar on every page'
+  rightSidebar: 'Right sidebar on every page',
+  pageKeys: 'Page Up and Page Down jump between posts'
 };
 
 const offByDefault = ['hideUncategorized', 'hideDigests', 'hideHypervisor'];
@@ -526,6 +527,38 @@ whenDomReady(function settingsPanel() {
     panel.showModal();
   });
   menu.appendChild(li);
+});
+
+whenEnabled('pageKeys', function pageKeySnapping() {
+  if (!document.body.matches(filterPages)) return;
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'PageDown' && e.key !== 'PageUp') return;
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (document.querySelector('dialog[open]')) return;
+    // Leave the keys alone while typing, or inside a list of its own like Upcoming Repacks
+    if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+    if (e.target !== document.body && e.target.scrollHeight > e.target.clientHeight && getComputedStyle(e.target).overflowY !== 'visible') return;
+
+    const header = document.querySelector('#masthead');
+    const headerBottom = header && getComputedStyle(header).position === 'fixed' ? header.getBoundingClientRect().bottom : 0;
+    const snapLine = headerBottom + 8;
+    const posts = [...document.querySelectorAll('article')].filter(post => post.offsetParent !== null);
+    const target = e.key === 'PageDown'
+      ? posts.find(post => post.getBoundingClientRect().top > snapLine + 2)
+      : posts.filter(post => post.getBoundingClientRect().top < snapLine - 2).pop();
+
+    if (!target) {
+      // Above the first post, go to the very top; past the last, let the page scroll to its end
+      if (e.key === 'PageUp') {
+        e.preventDefault();
+        window.scrollTo(0, 0);
+      }
+      return;
+    }
+    e.preventDefault();
+    window.scrollBy(0, target.getBoundingClientRect().top - snapLine);
+  });
 });
 
 whenEnabled('backToTop', function backToTopButton() {
