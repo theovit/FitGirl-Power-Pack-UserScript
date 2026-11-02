@@ -2,12 +2,12 @@
  * Checks on the live site that a donate box only shows when the post above it shows,
  * with tag filters and hide settings, and that nothing else between posts is hidden.
  * Input: none; edit CASES to try other pages and filters.
- * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file; paths are relative to the folder holding this repo.
  * Injects with GM_* shims, not through Tampermonkey.
  */
 async (defaultPage) => {
-  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
-  const SHOTS = 'C:/Users/Andrew/AppData/Local/Temp/claude/D--GitHub/a85b545d-3b74-4545-b5ad-f306bf0b875c/scratchpad';
+  const USERSCRIPT = 'FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
+  const SHOTS = '.playwright-mcp';
   const tag = (slug, name) => ({ slug, name });
   // The site itself hides donate boxes on the main page, so these use other lists
   const CASES = {

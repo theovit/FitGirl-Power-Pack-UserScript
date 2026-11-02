@@ -2,13 +2,13 @@
  * Exercises the tag filter on the live site: tag loading, include, exclude, persistence,
  * infinite scroll, page types, the empty-search pause, and tag load failure.
  * Input: none.
- * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file; paths are relative to the folder holding this repo.
  * Stores values in localStorage through GM_* shims, not through Tampermonkey.
  * Datalist popups can't be clicked here, so tags are typed and confirmed with Enter.
  */
 async (defaultPage) => {
-  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
-  const SHOTS = 'C:/Users/Andrew/AppData/Local/Temp/claude/D--GitHub/a85b545d-3b74-4545-b5ad-f306bf0b875c/scratchpad';
+  const USERSCRIPT = 'FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
+  const SHOTS = '.playwright-mcp';
   const BASE = 'https://fitgirl-repacks.site';
   const context = await defaultPage.context().browser().newContext({ viewport: null });
   const page = await context.newPage();

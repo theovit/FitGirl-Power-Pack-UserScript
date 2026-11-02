@@ -2,11 +2,11 @@
  * Turns each setting off through its menu command on the live site and reports which
  * features remain, plus whether the setting survives the reload and turns back on.
  * Input: none.
- * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file; paths are relative to the folder holding this repo.
  * Stores settings in localStorage through GM_* shims, not through Tampermonkey.
  */
 async (defaultPage) => {
-  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
+  const USERSCRIPT = 'FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
   const BASE = 'https://fitgirl-repacks.site';
   const context = await defaultPage.context().browser().newContext({ viewport: null });
   await context.addInitScript(() => {
@@ -116,7 +116,7 @@ async (defaultPage) => {
   out.hypervisorBackWhenOff = await visible('hypervisor-bypass');
 
   // The on-page panel, using real clicks
-  const shots = 'C:/Users/Andrew/AppData/Local/Temp/claude/D--GitHub/a85b545d-3b74-4545-b5ad-f306bf0b875c/scratchpad';
+  const shots = '.playwright-mcp';
   const openPanel = async () => {
     await page.locator('#primary-menu a', { hasText: 'Settings' }).click();
     await page.locator('dialog.fg-settings').waitFor();

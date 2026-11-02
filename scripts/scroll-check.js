@@ -2,11 +2,11 @@
  * Scrolls the live main page at several speeds and reports how close the viewport
  * got to the end of the loaded posts. A gap at or below 0 means the end came into view.
  * Input: none; edit USERSCRIPTS to compare versions and PAGE_DELAY to simulate a slower connection.
- * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file; paths are relative to the folder holding this repo.
  * Injects with GM_* shims, not through Tampermonkey.
  */
 async (defaultPage) => {
-  const USERSCRIPTS = { current: 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js' };
+  const USERSCRIPTS = { current: 'FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js' };
   const PAGE_DELAY = 500;
   const browser = defaultPage.context().browser();
 

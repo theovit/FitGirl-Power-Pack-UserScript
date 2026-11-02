@@ -2,12 +2,12 @@
  * Scrolls filtered post lists with the wheel and keyboard on the live site and samples
  * progress over time, to show whether infinite scroll keeps finding matching posts.
  * Input: none; edit CASES to try other filters.
- * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file; paths are relative to the folder holding this repo.
  * Injects with GM_* shims, not through Tampermonkey.
  */
 async (defaultPage) => {
-  const USERSCRIPTS = { current: 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js' };
-  const SHOTS = 'C:/Users/Andrew/AppData/Local/Temp/claude/D--GitHub/a85b545d-3b74-4545-b5ad-f306bf0b875c/scratchpad';
+  const USERSCRIPTS = { current: 'FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js' };
+  const SHOTS = '.playwright-mcp';
   const CASES = {
     commonTag: { include: [{ slug: 'action', name: 'Action' }], exclude: [] },
     narrowPair: { include: [{ slug: 'action', name: 'Action' }], exclude: [{ slug: 'first-person', name: 'First-person' }] },

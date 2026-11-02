@@ -2,12 +2,12 @@
  * Compares the right sidebar across page types on the live site against the main page:
  * position, support image size, overlap with page content, and its setting.
  * Input: none.
- * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file; paths are relative to the folder holding this repo.
  * Injects with GM_* shims, not through Tampermonkey.
  */
 async (defaultPage) => {
-  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
-  const SHOTS = 'C:/Users/Andrew/AppData/Local/Temp/claude/D--GitHub/a85b545d-3b74-4545-b5ad-f306bf0b875c/scratchpad';
+  const USERSCRIPT = 'FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
+  const SHOTS = '.playwright-mcp';
   const PAGES = { home: '/', tag: '/tag/3d/', search: '/?s=racing', game: '/deep-rock-galactic/', faq: '/faq/', donate: '/donations/', paw: '/games-with-my-personal-pink-paw-award/', popular: '/popular-repacks/', az: '/all-my-repacks-a-z/', contacts: '/contacts/', tags: '/tags', notFound: '/no-such-page-xyz/' };
   const context = await defaultPage.context().browser().newContext({ viewport: null });
   const page = await context.newPage();

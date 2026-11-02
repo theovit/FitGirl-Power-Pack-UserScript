@@ -2,12 +2,12 @@
  * Tests the back to top button on the live site: when it shows, that clicking it returns
  * to the top after infinite scroll has added posts, other page types, and its setting.
  * Input: none.
- * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file; paths are relative to the folder holding this repo.
  * Injects with GM_* shims, not through Tampermonkey.
  */
 async (defaultPage) => {
-  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
-  const SHOTS = 'C:/Users/Andrew/AppData/Local/Temp/claude/D--GitHub/a85b545d-3b74-4545-b5ad-f306bf0b875c/scratchpad';
+  const USERSCRIPT = 'FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
+  const SHOTS = '.playwright-mcp';
   const context = await defaultPage.context().browser().newContext({ viewport: null });
   const page = await context.newPage();
   const errors = [];

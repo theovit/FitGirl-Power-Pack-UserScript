@@ -1,14 +1,14 @@
 /*
  * Runs the userscript against the live site and reports what each fix did.
  * Input: none.
- * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
+ * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file; paths are relative to the folder holding this repo.
  * Injects after DOMContentLoaded with GM_* shims, not through Tampermonkey.
  * Uses its own full-window context, because the default one is locked to a fixed viewport.
  */
 async (defaultPage) => {
   const context = await defaultPage.context().browser().newContext({ viewport: null });
   const page = await context.newPage();
-  const USERSCRIPT = 'D:/GitHub/FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
+  const USERSCRIPT = 'FitGirl-Power-Pack-UserScript/FitGirl Power Pack.user.js';
   const BASE = 'https://fitgirl-repacks.site';
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
