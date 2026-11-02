@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FitGirl Power Pack
 // @namespace    https://tampermonkey.net/
-// @version      1.0.9
+// @version      1.0.10
 // @description  Dark theme, optional comments toggle, YouTube trailer link, infinite scroll, and a tag page – all in one userscript for FitGirl‑Repacks.
 // @author       theovlit
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=fitgirl-repacks.site

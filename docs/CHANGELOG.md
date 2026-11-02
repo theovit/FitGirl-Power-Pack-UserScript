@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.10
 - Tag filters now clear whenever a new page loads, instead of being remembered.
 - Links on the Tags page now open in the same tab.
 - With infinite scroll on, the page number bar is gone, and the end of a list now says there are no more pages to load.
