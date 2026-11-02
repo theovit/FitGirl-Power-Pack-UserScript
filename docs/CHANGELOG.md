@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.14
 - The Tags page now uses the saved tag list too, so it appears instantly after the first load. Refresh tags updates it, and a failed load shows the saved list or a clear error.
 
 ## 1.0.13
