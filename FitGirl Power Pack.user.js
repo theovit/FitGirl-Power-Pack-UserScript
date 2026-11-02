@@ -177,6 +177,22 @@ async function fetchAllTags() {
   return { allTags, failed };
 }
 
+// Fetches and saves the filter's tag list, returning it, or nothing if the fetch failed
+async function refreshTagCache() {
+  const { allTags, failed } = await fetchAllTags();
+  if (failed) return null;
+  // Tag names arrive HTML-escaped, e.g. "Hack &amp; Slash"
+  const tags = allTags.map(({ name, slug }) => ({
+    slug,
+    name: new DOMParser().parseFromString(name, 'text/html').documentElement.textContent
+  }));
+  GM_setValue('filterTagCache', { savedAt: Date.now(), tags });
+  return tags;
+}
+
+// Set by the filter bar on pages that have one, so the settings button can update it
+let showFilterTags = null;
+
 whenEnabled('gameFilter', function tagFilterBar() {
   const firstPost = document.querySelector('article');
   if (!firstPost || !document.body.matches(filterPages)) return;
@@ -203,7 +219,6 @@ whenEnabled('gameFilter', function tagFilterBar() {
   const inputs = bar.querySelectorAll('input');
   let knownTags = null;
   let refreshStarted = false;
-  const tagCache = GM_getValue('filterTagCache', null);
   const tagCacheMaxAge = 24 * 60 * 60 * 1000;
 
   function showTags(tags) {
@@ -211,25 +226,21 @@ whenEnabled('gameFilter', function tagFilterBar() {
     bar.querySelector('datalist').replaceChildren(...tags.map(tag => new Option('', tag.name)));
     inputs.forEach(input => { input.placeholder = 'Type to search tags'; });
   }
+  showFilterTags = showTags;
 
   // Saved tags appear right away; a day-old list still shows while a new one loads behind it
   async function loadTags() {
+    const tagCache = GM_getValue('filterTagCache', null);
     if (!knownTags && tagCache) showTags(tagCache.tags);
     if (refreshStarted || (tagCache && Date.now() - tagCache.savedAt < tagCacheMaxAge)) return;
     refreshStarted = true;
     if (!knownTags) inputs.forEach(input => { input.placeholder = 'Loading tags…'; });
-    const { allTags, failed } = await fetchAllTags();
-    if (failed) {
+    const tags = await refreshTagCache();
+    if (!tags) {
       refreshStarted = false;
       if (!knownTags) inputs.forEach(input => { input.placeholder = 'Tags failed to load. Reopen to retry.'; });
       return;
     }
-    // Tag names arrive HTML-escaped, e.g. "Hack &amp; Slash"
-    const tags = allTags.map(({ name, slug }) => ({
-      slug,
-      name: new DOMParser().parseFromString(name, 'text/html').documentElement.textContent
-    }));
-    GM_setValue('filterTagCache', { savedAt: Date.now(), tags });
     showTags(tags);
   }
 
@@ -399,6 +410,16 @@ GM_addStyle(`
     color: #aaa;
     font-size: 13px;
   }
+  .fg-settings button + button {
+    margin-left: 8px;
+  }
+  .fg-settings button:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  .fg-settings-refresh-status:empty {
+    display: none;
+  }
   .fg-settings button {
     padding: 8px 16px;
     background: #f887ff;
@@ -424,9 +445,22 @@ whenDomReady(function settingsPanel() {
       ).join('')}
       <p>Changes apply when you close this panel.</p>
       <button>Close</button>
+      <button type="button" class="fg-settings-refresh">Refresh tags</button>
+      <p class="fg-settings-refresh-status" role="status"></p>
     </form>
   `;
   document.body.appendChild(panel);
+
+  const refreshStatus = panel.querySelector('.fg-settings-refresh-status');
+  panel.querySelector('.fg-settings-refresh').addEventListener('click', async e => {
+    const button = e.currentTarget;
+    button.disabled = true;
+    refreshStatus.textContent = 'Refreshing tags…';
+    const tags = await refreshTagCache();
+    if (tags && showFilterTags) showFilterTags(tags);
+    refreshStatus.textContent = tags ? `Tags updated: ${tags.length} tags.` : 'Tags failed to load. Try again in a moment.';
+    button.disabled = false;
+  });
 
   let changed = false;
   panel.addEventListener('change', e => {
