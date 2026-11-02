@@ -29,7 +29,7 @@ async (defaultPage) => {
     await page.addScriptTag({ content: 'window.GM_addStyle = css => { const s = document.createElement("style"); s.textContent = css; document.head.appendChild(s); }; window.GM_xmlhttpRequest = o => __fgFetch(o.url).then(t => o.onload({ responseText: t }), () => o.onerror()); window.GM_getValue = (k, d) => d; window.GM_setValue = () => {}; window.GM_registerMenuCommand = () => {};' });
     await page.addScriptTag({ path: USERSCRIPT });
   };
-  const tagList = () => page.waitForFunction(() => /Tag Index/.test(document.body.textContent), null, { timeout: 30000 })
+  const tagList = () => page.waitForFunction(() => /Tag Index|could not be loaded/.test(document.body.textContent), null, { timeout: 30000 })
     .then(() => page.evaluate(() => ({
       heading: document.querySelector('.page-content h2')?.textContent,
       links: document.querySelectorAll('.page-content li a').length,

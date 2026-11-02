@@ -198,8 +198,10 @@ async function refreshTagCache() {
   return tags;
 }
 
-// Set by the filter bar on pages that have one, so the settings button can update it
-let showFilterTags = null;
+const tagCacheMaxAge = 24 * 60 * 60 * 1000;
+
+// Set by the filter bar or Tags page, whichever this page has, so the settings button can update it
+let showRefreshedTags = null;
 
 whenEnabled('gameFilter', function tagFilterBar() {
   const firstPost = document.querySelector('article');
@@ -227,14 +229,13 @@ whenEnabled('gameFilter', function tagFilterBar() {
   const inputs = bar.querySelectorAll('input');
   let knownTags = null;
   let refreshStarted = false;
-  const tagCacheMaxAge = 24 * 60 * 60 * 1000;
 
   function showTags(tags) {
     knownTags = tags;
     bar.querySelector('datalist').replaceChildren(...tags.map(tag => new Option('', tag.name)));
     inputs.forEach(input => { input.placeholder = 'Type to search tags'; });
   }
-  showFilterTags = showTags;
+  showRefreshedTags = showTags;
 
   // Saved tags appear right away; a day-old list still shows while a new one loads behind it
   async function loadTags() {
@@ -499,7 +500,7 @@ whenDomReady(function settingsPanel() {
     button.disabled = true;
     refreshStatus.textContent = 'Refreshing tags…';
     const tags = await refreshTagCache();
-    if (tags && showFilterTags) showFilterTags(tags);
+    if (tags && showRefreshedTags) showRefreshedTags(tags);
     refreshStatus.textContent = tags ? `Tags updated: ${tags.length} tags.` : 'Tags failed to load. Try again in a moment.';
     button.disabled = false;
   });
@@ -1098,19 +1099,35 @@ whenEnabled('tags', async function TagInjecotr() {
   tagContainer.innerHTML = `<p style="margin:1em 0;color:#ccc;">Loading tags…</p>`;
   contentDiv.appendChild(tagContainer);
 
-  // Fetch tags from WP REST API
-  const { allTags, failed } = await fetchAllTags();
-
   // Replace "Loading…" with actual tag list
-  tagContainer.innerHTML = `
-    <h2 style="color:#f887ff;">Tag Index (${allTags.length})</h2>
-    ${failed ? '<p style="color:#ff8a80;">Some tags could not be loaded. Reload the page to try again.</p>' : ''}
-    <ul style="list-style:none;padding-left:0;line-height:1.6;">
-      ${allTags.map(tag =>
-        `<li><a href="https://fitgirl-repacks.site/tag/${tag.slug}/" style="color:#80cbc4;text-decoration:none;">${tag.name}</a></li>`
-      ).join('')}
-    </ul>
-  `;
+  function showTags(tags) {
+    tagContainer.innerHTML = `
+      <h2 style="color:#f887ff;">Tag Index (${tags.length})</h2>
+      <ul style="list-style:none;padding-left:0;line-height:1.6;"></ul>
+    `;
+    tagContainer.querySelector('ul').replaceChildren(...tags.map(tag => {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = `https://fitgirl-repacks.site/tag/${tag.slug}/`;
+      link.style.cssText = 'color:#80cbc4;text-decoration:none;';
+      // Saved names are already decoded, so this must stay plain text
+      link.textContent = tag.name;
+      item.append(link);
+      return item;
+    }));
+  }
+  showRefreshedTags = showTags;
+
+  // Saved tags appear right away; a day-old list still shows while a new one loads behind it
+  const tagCache = GM_getValue('filterTagCache', null);
+  if (tagCache) showTags(tagCache.tags);
+  if (tagCache && Date.now() - tagCache.savedAt < tagCacheMaxAge) return;
+  const tags = await refreshTagCache();
+  if (tags) {
+    showTags(tags);
+  } else if (!tagCache) {
+    tagContainer.innerHTML = '<p style="margin:1em 0;color:#ff8a80;">Tags could not be loaded. Reload the page to try again.</p>';
+  }
 });
 
 whenEnabled('tags', function addStandaloneTagsMenuItem() {

@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- The Tags page now uses the saved tag list too, so it appears instantly after the first load. Refresh tags updates it, and a failed load shows the saved list or a clear error.
+
 ## 1.0.13
 - Fixed the page running off the right side of the window on screens narrower than about 1700px. The right sidebar and top bar now fit, and on phones the sidebar sits below the posts at full width.
 

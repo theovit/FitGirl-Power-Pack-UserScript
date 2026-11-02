@@ -23,4 +23,4 @@ A userscript that adds a dark theme and browsing tools to FitGirl Repacks.
 
 Click **Settings** in the site's top menu, or open the Tampermonkey menu on any page of the site, to turn each feature on or off. The three hide options start off, and everything else starts on.
 
-The Refresh tags button in the Settings panel updates the filter's saved tag list. It also refreshes by itself once a day.
+The Refresh tags button in the Settings panel updates the saved tag list used by the filter and the Tags page. It also refreshes by itself once a day.
