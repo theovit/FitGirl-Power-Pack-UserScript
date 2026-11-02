@@ -34,10 +34,8 @@ async (defaultPage) => {
     await page.waitForTimeout(1500);
   };
   const setFilters = async (include = [], exclude = []) => {
-    await page.evaluate(([i, e]) => {
-      localStorage.setItem('fg-filterInclude', JSON.stringify(i));
-      localStorage.setItem('fg-filterExclude', JSON.stringify(e));
-    }, [include, exclude]);
+    // Filters only survive the next load, so this must come right before opening a page
+    await page.evaluate(([i, e]) => sessionStorage.setItem('fg-filters', JSON.stringify({ filterInclude: i, filterExclude: e })), [include, exclude]);
   };
   const tag = (slug, name) => ({ slug, name });
   const state = () => page.evaluate(() => {
@@ -84,8 +82,9 @@ async (defaultPage) => {
   await open('/');
   await tagsReady();
   await pick('filterInclude', 'Action');
-  await page.waitForTimeout(1500);
-  out.movedToInclude = await page.evaluate(() => ({ include: localStorage.getItem('fg-filterInclude'), exclude: localStorage.getItem('fg-filterExclude') }));
+  await page.waitForTimeout(2000);
+  const moved = await state();
+  out.movedToInclude = { include: moved.include, exclude: moved.exclude };
 
   // Both lists together, reload, and scrolling
   await setFilters([tag('action', 'Action')], [tag('first-person', 'First-person')]);
@@ -102,14 +101,43 @@ async (defaultPage) => {
   await page.evaluate(() => scrollTo(0, 0));
   await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('.fg-filter-clear').click()]);
   await page.waitForTimeout(1500);
-  out.clearedAfterDiscard = { ...(await state()), stored: await page.evaluate(() => localStorage.getItem('fg-filterInclude')) };
+  out.clearedAfterDiscard = await state();
+
+  // Removing one tag after posts were discarded keeps the other through the script's reload
+  await setFilters([tag('action', 'Action')], [tag('first-person', 'First-person')]);
+  await open('/');
+  await page.mouse.move(800, 600);
+  for (let i = 0; i < 20; i++) { await page.mouse.wheel(0, 500); await page.waitForTimeout(150); }
+  await page.evaluate(() => scrollTo(0, 0));
+  await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('[data-list="filterExclude"] .fg-filter-chips button').click()]);
+  await page.waitForTimeout(1500);
+  out.removedOneTagKeepsOther = await state();
+
+  // A reload or new page the reader starts clears the filter
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1500);
+  out.afterManualReload = await state();
+  await setFilters([tag('action', 'Action')], []);
+  await open('/');
+  await page.waitForTimeout(500);
+  await open('/page/2/');
+  out.afterGoingToNewPage = await state();
 
   // Other page types
-  await setFilters([tag('action', 'Action')], []);
   for (const path of ['/page/2/', '/category/lossless-repack/', '/tag/rpg/', '/?s=racing', '/2026/10/']) {
+    await setFilters([tag('action', 'Action')], []);
     await open(path);
     out['page ' + path] = { ...(await state()), allAction: await everyShownHas('action') };
   }
+
+  // Tags page links stay in the same tab
+  await open('/tags');
+  await page.waitForFunction(() => /Tag Index/.test(document.body.textContent), null, { timeout: 30000 });
+  const tagLinks = page.locator('.page-content li a');
+  out.tagLinkTargets = await tagLinks.evaluateAll(links => links.filter(a => a.target).length);
+  const pagesBefore = context.pages().length;
+  await Promise.all([page.waitForURL('**/tag/**'), tagLinks.first().click()]);
+  out.tagLinkClick = { url: new URL(page.url()).pathname, tabsAdded: context.pages().length - pagesBefore };
   for (const path of ['/upcoming-repacks-10/', '/popular-repacks/', '/donations/']) {
     await open(path);
     const s = await state();
@@ -143,9 +171,9 @@ async (defaultPage) => {
   await tagsReady();
   out.tagRetry = (await state()).options;
 
-  // Setting turned off ignores a saved filter
-  await setFilters([], [tag('3d', '3D')]);
+  // Setting turned off ignores a filter
   await page.evaluate(() => localStorage.setItem('fg-gameFilter', 'false'));
+  await setFilters([], [tag('3d', '3D')]);
   await open('/');
   const off = await state();
   out.settingOff = { bar: off.bar, shown: off.shown, inPage: off.inPage };

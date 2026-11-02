@@ -81,11 +81,21 @@ if (isEnabled('infiniteScroll')) {
   GM_addStyle('nav.paging-navigation { visibility: hidden; height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; overflow: hidden; }');
 }
 
+// Filters reset on every page load. The one exception is the reload the script does
+// itself after discarding posts, which hands them over through sessionStorage.
+const filters = JSON.parse(sessionStorage.getItem('fg-filters')) || { filterInclude: [], filterExclude: [] };
+sessionStorage.removeItem('fg-filters');
+
+function reloadKeepingFilters() {
+  sessionStorage.setItem('fg-filters', JSON.stringify(filters));
+  location.reload();
+}
+
 // Posts carry their tags as classes, so CSS can hide them before they're drawn.
 // Include matches any chosen tag.
 function filterSelectors() {
   if (!isEnabled('gameFilter')) return [];
-  const tags = list => GM_getValue(list, []).map(tag => `.tag-${CSS.escape(tag.slug)}`).join(', ');
+  const tags = list => filters[list].map(tag => `.tag-${CSS.escape(tag.slug)}`).join(', ');
   const include = tags('filterInclude');
   const exclude = tags('filterExclude');
   return [
@@ -108,7 +118,7 @@ let searching = false;
 let pagesWithoutMatch = 0;
 
 function updateFilterStatus() {
-  const active = isEnabled('gameFilter') ? GM_getValue('filterInclude', []).length + GM_getValue('filterExclude', []).length : 0;
+  const active = isEnabled('gameFilter') ? filters.filterInclude.length + filters.filterExclude.length : 0;
   const posts = [...document.querySelectorAll('article')];
   const shown = posts.filter(post => post.offsetParent !== null).length;
   const checked = posts.length + discardedPosts;
@@ -213,18 +223,18 @@ whenEnabled('gameFilter', function tagFilterBar() {
   function render() {
     // Discarded posts can't be brought back in place, so a changed filter starts over
     if (discardedPosts) {
-      location.reload();
+      reloadKeepingFilters();
       return;
     }
     bar.querySelectorAll('[data-list]').forEach(column => {
       const list = column.dataset.list;
-      column.querySelector('.fg-filter-chips').replaceChildren(...GM_getValue(list, []).map(tag => {
+      column.querySelector('.fg-filter-chips').replaceChildren(...filters[list].map(tag => {
         const chip = document.createElement('button');
         chip.type = 'button';
         chip.title = `Remove ${tag.name}`;
         chip.textContent = `${tag.name} ×`;
         chip.addEventListener('click', () => {
-          GM_setValue(list, GM_getValue(list, []).filter(other => other.slug !== tag.slug));
+          filters[list] = filters[list].filter(other => other.slug !== tag.slug);
           render();
         });
         return chip;
@@ -242,12 +252,12 @@ whenEnabled('gameFilter', function tagFilterBar() {
     if (!tag) return;
     const list = input.closest('[data-list]').dataset.list;
     const otherList = list === 'filterInclude' ? 'filterExclude' : 'filterInclude';
-    GM_setValue(otherList, GM_getValue(otherList, []).filter(other => other.slug !== tag.slug));
-    if (!GM_getValue(list, []).some(other => other.slug === tag.slug)) {
-      GM_setValue(list, [...GM_getValue(list, []), tag]);
+    filters[otherList] = filters[otherList].filter(other => other.slug !== tag.slug);
+    if (!filters[list].some(other => other.slug === tag.slug)) {
+      filters[list] = [...filters[list], tag];
     }
     input.value = '';
-    if (filterStyle) render(); else location.reload();
+    if (filterStyle) render(); else reloadKeepingFilters();
   }
 
   inputs.forEach(input => {
@@ -258,15 +268,15 @@ whenEnabled('gameFilter', function tagFilterBar() {
     });
   });
   bar.querySelector('.fg-filter-clear').addEventListener('click', () => {
-    GM_setValue('filterInclude', []);
-    GM_setValue('filterExclude', []);
+    filters.filterInclude = [];
+    filters.filterExclude = [];
     render();
   });
   bar.addEventListener('toggle', () => {
     if (bar.open) loadTags();
   });
 
-  bar.open = GM_getValue('filterInclude', []).length + GM_getValue('filterExclude', []).length > 0;
+  bar.open = filters.filterInclude.length + filters.filterExclude.length > 0;
   render();
 });
 
@@ -945,7 +955,7 @@ whenEnabled('tags', async function TagInjecotr() {
     ${failed ? '<p style="color:#ff8a80;">Some tags could not be loaded. Reload the page to try again.</p>' : ''}
     <ul style="list-style:none;padding-left:0;line-height:1.6;">
       ${allTags.map(tag =>
-        `<li><a href="https://fitgirl-repacks.site/tag/${tag.slug}/" style="color:#80cbc4;text-decoration:none;" target="_blank">${tag.name}</a></li>`
+        `<li><a href="https://fitgirl-repacks.site/tag/${tag.slug}/" style="color:#80cbc4;text-decoration:none;">${tag.name}</a></li>`
       ).join('')}
     </ul>
   `;

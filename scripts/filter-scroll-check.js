@@ -24,8 +24,11 @@ async (defaultPage) => {
   const run = async (name, filter, input, script) => {
     const context = await browser.newContext({ viewport: null });
     await context.addInitScript(f => {
-      localStorage.setItem('fg-filterInclude', JSON.stringify(f.include));
-      localStorage.setItem('fg-filterExclude', JSON.stringify(f.exclude));
+      // Filters only survive one load, so hand them over on the first one
+      if (location.hostname.endsWith('fitgirl-repacks.site') && !sessionStorage.getItem('fg-seeded')) {
+        sessionStorage.setItem('fg-seeded', '1');
+        sessionStorage.setItem('fg-filters', JSON.stringify({ filterInclude: f.include, filterExclude: f.exclude }));
+      }
     }, filter);
     const page = await context.newPage();
     const errors = [];

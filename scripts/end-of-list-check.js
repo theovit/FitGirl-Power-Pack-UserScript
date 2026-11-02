@@ -23,7 +23,12 @@ async (defaultPage) => {
   });
   const start = async (path, values = {}) => {
     await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
-    await page.evaluate(v => { localStorage.clear(); for (const k in v) localStorage.setItem('fg-' + k, JSON.stringify(v[k])); }, values);
+    await page.evaluate(({ filterInclude, ...settings }) => {
+      localStorage.clear();
+      for (const k in settings) localStorage.setItem('fg-' + k, JSON.stringify(settings[k]));
+      // Filters only survive one load, which is all this needs
+      if (filterInclude) sessionStorage.setItem('fg-filters', JSON.stringify({ filterInclude, filterExclude: [] }));
+    }, values);
     requests = 0;
     await page.goto(BASE + path, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1500);
