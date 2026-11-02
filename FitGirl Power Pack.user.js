@@ -317,6 +317,10 @@ whenEnabled('gameFilter', function tagFilterBar() {
 if (isEnabled('rightSidebar')) {
   GM_addStyle(`
     #content-sidebar { display: block !important; margin-left: -23% !important; width: 23% !important; padding-top: 0 !important; }
+    /* Too narrow for a column on phones, so it goes under the page at full width */
+    @media (max-width: 673px) {
+      #content-sidebar { margin-left: 0 !important; width: 100% !important; }
+    }
     /* Popular Repacks widens this grid for its own list, which would also stretch the sidebar's */
     #content-sidebar .widgets-grid-layout { width: 100% !important; }
   `);
@@ -822,6 +826,42 @@ whenDomReady(replaceImages);
       border: 1px solid var(--border-color);
       border-radius: 8px;
       border-top-right-radius: unset;
+    }
+
+    /* The sidebar's left: 120px needs room beside a centered page. Below that, line the
+       page up on the left and shrink it so the shifted sidebar still fits in the window. */
+    @media (max-width: 1699px) {
+      #page {
+        width: calc(100vw - 172px);
+        margin: 0 !important;
+      }
+      /* The fixed header starts after the page's padding, so it can't be the window's full width */
+      .site-header {
+        max-width: calc(100vw - 34px);
+      }
+    }
+
+    /* Tighter menu spacing so the added Settings and Tags links stay on one row */
+    @media (min-width: 1008px) and (max-width: 1300px) {
+      .primary-navigation li a {
+        padding: 0 6px;
+        font-size: 10px;
+      }
+    }
+
+    /* Below this the site's left menu moves to the top, so nothing needs the shift */
+    @media (max-width: 1007px) {
+      #page {
+        width: auto;
+        padding: 0;
+      }
+      .site-header {
+        box-sizing: border-box;
+        max-width: 100%;
+      }
+      .content-sidebar {
+        left: 0;
+      }
     }
   `);
 })();

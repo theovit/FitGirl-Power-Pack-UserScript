@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Fixed the page running off the right side of the window on screens narrower than about 1700px. The right sidebar and top bar now fit, and on phones the sidebar sits below the posts at full width.
+
 ## 1.0.12
 - The script's description and the README now cover the current features and where to find Settings.
 - The right sidebar now shows on every page at the same size as the main page, including FAQ, Donate, Popular Repacks and the Tags page. It can be turned off in settings.
