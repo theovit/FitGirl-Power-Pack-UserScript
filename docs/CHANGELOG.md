@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Post lists now have a "Filter by tag" bar. You can show only games with chosen tags or hide games with others, using the site's current tag list, and your choices are remembered. It can be turned off in settings.
 - A new optional setting can hide Hypervisor Bypass posts on the main page. It's off by default.
 - Infinite scroll now starts loading two screens before the end of the page, and keeps loading if you're already near the end when a page arrives, so you're much less likely to reach the bottom.
 

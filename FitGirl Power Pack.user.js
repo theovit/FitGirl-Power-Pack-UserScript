@@ -40,7 +40,8 @@ const settings = {
   donateTables: 'Donate page table fix',
   hideUncategorized: 'Hide Uncategorized posts on the main page',
   hideDigests: 'Hide Updates Digest posts on the main page',
-  hideHypervisor: 'Hide Hypervisor Bypass posts on the main page'
+  hideHypervisor: 'Hide Hypervisor Bypass posts on the main page',
+  gameFilter: 'Tag filter on post lists'
 };
 
 const offByDefault = ['hideUncategorized', 'hideDigests', 'hideHypervisor'];
@@ -66,8 +67,217 @@ if (isEnabled('hideUncategorized')) GM_addStyle('body.home article.category-unca
 if (isEnabled('hideDigests')) GM_addStyle('body.home article.category-updates-digest { display: none; }');
 if (isEnabled('hideHypervisor')) GM_addStyle('body.home article.category-hypervisor-bypass { display: none; }');
 
+/*****************************************************************
+ * TAG FILTER                                                     *
+ *****************************************************************/
+const filterPages = 'body:is(.home, .archive, .search)';
+
+// Posts carry their tags as classes, so CSS can hide them before they're drawn,
+// including posts added later by infinite scroll. Include matches any chosen tag.
+function filterCss() {
+  const selectors = list => GM_getValue(list, []).map(tag => `.tag-${CSS.escape(tag.slug)}`).join(', ');
+  const include = selectors('filterInclude');
+  const exclude = selectors('filterExclude');
+  return [
+    include && `${filterPages} article:not(${include}) { display: none; }`,
+    exclude && `${filterPages} article:is(${exclude}) { display: none; }`
+  ].join('\n');
+}
+
+const filterStyle = isEnabled('gameFilter') ? GM_addStyle(filterCss()) : null;
+
+function updateFilterStatus() {
+  const status = document.querySelector('.fg-filter-status');
+  if (!status) return;
+  const active = GM_getValue('filterInclude', []).length + GM_getValue('filterExclude', []).length;
+  const posts = [...document.querySelectorAll('article')];
+  const shown = posts.filter(post => post.offsetParent !== null).length;
+  const keepLooking = shown === 0 && document.querySelector('a.next.page-numbers') ? ' Scroll to keep looking.' : '';
+  status.textContent = active ? `${active} active, showing ${shown} of ${posts.length} loaded posts.${keepLooking}` : '';
+}
+
+async function fetchAllTags() {
+  const perPage = 100;
+  let page = 1;
+  let allTags = [];
+  let hasMore = true;
+  let failed = false;
+
+  try {
+    while (hasMore) {
+      const res = await fetch(`https://fitgirl-repacks.site/wp-json/wp/v2/tags?per_page=${perPage}&page=${page}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const tags = await res.json();
+      allTags.push(...tags);
+      hasMore = tags.length === perPage;
+      page++;
+    }
+  } catch (err) {
+    failed = true;
+    console.error('FG tag fetch error', err);
+  }
+  return { allTags, failed };
+}
+
+whenEnabled('gameFilter', function tagFilterBar() {
+  const firstPost = document.querySelector('article');
+  if (!firstPost || !document.body.matches(filterPages)) return;
+
+  const bar = document.createElement('details');
+  bar.className = 'fg-filter';
+  bar.innerHTML = `
+    <summary>Filter by tag <span class="fg-filter-status"></span></summary>
+    <div class="fg-filter-columns">
+      <div data-list="filterInclude">
+        <label>Only show games tagged <input list="fg-filter-tags" placeholder="Open to load tags"></label>
+        <div class="fg-filter-chips"></div>
+      </div>
+      <div data-list="filterExclude">
+        <label>Hide games tagged <input list="fg-filter-tags" placeholder="Open to load tags"></label>
+        <div class="fg-filter-chips"></div>
+      </div>
+    </div>
+    <datalist id="fg-filter-tags"></datalist>
+    <button type="button" class="fg-filter-clear">Clear all</button>
+  `;
+  firstPost.parentNode.insertBefore(bar, firstPost);
+
+  const inputs = bar.querySelectorAll('input');
+  let knownTags = null;
+
+  async function loadTags() {
+    if (knownTags) return;
+    inputs.forEach(input => { input.placeholder = 'Loading tags…'; });
+    const { allTags, failed } = await fetchAllTags();
+    if (failed) {
+      inputs.forEach(input => { input.placeholder = 'Tags failed to load. Reopen to retry.'; });
+      return;
+    }
+    // Tag names arrive HTML-escaped, e.g. "Hack &amp; Slash"
+    knownTags = allTags.map(({ name, slug }) => ({
+      slug,
+      name: new DOMParser().parseFromString(name, 'text/html').documentElement.textContent
+    }));
+    bar.querySelector('datalist').replaceChildren(...knownTags.map(tag => new Option('', tag.name)));
+    inputs.forEach(input => { input.placeholder = 'Type to search tags'; });
+  }
+
+  function render() {
+    bar.querySelectorAll('[data-list]').forEach(column => {
+      const list = column.dataset.list;
+      column.querySelector('.fg-filter-chips').replaceChildren(...GM_getValue(list, []).map(tag => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.title = `Remove ${tag.name}`;
+        chip.textContent = `${tag.name} ×`;
+        chip.addEventListener('click', () => {
+          GM_setValue(list, GM_getValue(list, []).filter(other => other.slug !== tag.slug));
+          render();
+        });
+        return chip;
+      }));
+    });
+    if (filterStyle) filterStyle.textContent = filterCss();
+    updateFilterStatus();
+    // The page may be much shorter now, so let infinite scroll check whether it needs more
+    window.dispatchEvent(new Event('scroll'));
+  }
+
+  function addTag(input) {
+    const typed = input.value.trim().toLowerCase();
+    const tag = knownTags && knownTags.find(known => known.name.toLowerCase() === typed);
+    if (!tag) return;
+    const list = input.closest('[data-list]').dataset.list;
+    const otherList = list === 'filterInclude' ? 'filterExclude' : 'filterInclude';
+    GM_setValue(otherList, GM_getValue(otherList, []).filter(other => other.slug !== tag.slug));
+    if (!GM_getValue(list, []).some(other => other.slug === tag.slug)) {
+      GM_setValue(list, [...GM_getValue(list, []), tag]);
+    }
+    input.value = '';
+    if (filterStyle) render(); else location.reload();
+  }
+
+  inputs.forEach(input => {
+    input.addEventListener('change', () => addTag(input));
+    // Picking from the list has no typing inputType in most browsers, and may not fire change until blur
+    input.addEventListener('input', e => {
+      if (!e.inputType || e.inputType === 'insertReplacementText') addTag(input);
+    });
+  });
+  bar.querySelector('.fg-filter-clear').addEventListener('click', () => {
+    GM_setValue('filterInclude', []);
+    GM_setValue('filterExclude', []);
+    render();
+  });
+  bar.addEventListener('toggle', () => {
+    if (bar.open) loadTags();
+  });
+
+  bar.open = GM_getValue('filterInclude', []).length + GM_getValue('filterExclude', []).length > 0;
+  render();
+});
+
 // Styled on its own so the panel stays readable with the dark theme turned off
 GM_addStyle(`
+  .fg-filter {
+    margin: 1.5em 0 0;
+    padding: 12px 16px;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+  .fg-filter summary {
+    color: #f887ff;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .fg-filter-status {
+    margin-left: 8px;
+    color: #aaa;
+    font-weight: normal;
+    font-size: 13px;
+  }
+  .fg-filter-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 12px 0;
+  }
+  .fg-filter-columns > div {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+  .fg-filter label {
+    display: block;
+    color: #e0e0e0;
+    font-size: 14px;
+  }
+  .fg-filter input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 4px;
+    padding: 6px 8px;
+    background: #121212;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+  }
+  .fg-filter-chips button,
+  .fg-filter-clear {
+    margin: 6px 6px 0 0;
+    padding: 3px 8px;
+    border: 1px solid #f887ff;
+    border-radius: 4px;
+    background: transparent;
+    color: #f887ff;
+    font-size: 13px;
+    font-weight: normal;
+    text-transform: none;
+    cursor: pointer;
+  }
   .fg-settings {
     padding: 0;
     width: min(340px, calc(100vw - 32px));
@@ -574,6 +784,8 @@ whenEnabled('trailers', function YouTubeTrailerLinks(){
  *****************************************************************/
 whenEnabled('infiniteScroll', function infiniteScroll(){
   let loading=false;
+  // A filter can hide most posts, so limit the pages fetched without the reader scrolling
+  let autoLoads=0;
   async function loadNext(){
     if(loading) return;
     const next=document.querySelector('a.next.page-numbers');
@@ -588,12 +800,16 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
       const parent=nav?nav.parentNode:document.querySelector('main')||document.body;
       articles.forEach(a=>parent.insertBefore(a,nav||null));
       replaceImages();
+      updateFilterStatus();
       const newNext=doc.querySelector('a.next.page-numbers');
       if(newNext&&next){next.href=newNext.href;} else if(next){next.remove();}
       loaded=true;
     }catch(err){console.error('FG infinite scroll error',err);} finally{loading=false;}
     // Scrolling during a load is ignored, so check again; not after errors, to avoid retrying forever
-    if(loaded) loadIfNearEnd();
+    if(loaded&&autoLoads<10){
+      autoLoads++;
+      loadIfNearEnd();
+    }
   }
   function loadIfNearEnd(){
     const next=document.querySelector('a.next.page-numbers');
@@ -601,7 +817,11 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
     // Start while the end of the page is still two screens away
     if(next.getBoundingClientRect().top<window.innerHeight*3) loadNext();
   }
-  window.addEventListener('scroll',loadIfNearEnd);
+  // Wheel too, because a heavily filtered page may be too short to scroll
+  ['scroll','wheel'].forEach(type=>window.addEventListener(type,()=>{
+    autoLoads=0;
+    loadIfNearEnd();
+  },{passive:true}));
   loadIfNearEnd();
 });
 
@@ -641,25 +861,7 @@ whenEnabled('tags', async function TagInjecotr() {
   contentDiv.appendChild(tagContainer);
 
   // Fetch tags from WP REST API
-  const perPage = 100;
-  let page = 1;
-  let allTags = [];
-  let hasMore = true;
-  let failed = false;
-
-  try {
-    while (hasMore) {
-      const res = await fetch(`https://fitgirl-repacks.site/wp-json/wp/v2/tags?per_page=${perPage}&page=${page}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const tags = await res.json();
-      allTags.push(...tags);
-      hasMore = tags.length === perPage;
-      page++;
-    }
-  } catch (err) {
-    failed = true;
-    console.error('FG tag fetch error', err);
-  }
+  const { allTags, failed } = await fetchAllTags();
 
   // Replace "Loading…" with actual tag list
   tagContainer.innerHTML = `

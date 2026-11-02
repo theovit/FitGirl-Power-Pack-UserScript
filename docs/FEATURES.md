@@ -10,6 +10,7 @@
 - [beta] Blended images with `garold` in the filename
 
 ## Browsing
+- [beta] Tag filter with include and exclude lists on post lists
 - [beta] Optional hiding of Uncategorized, Updates Digest and Hypervisor Bypass posts on the main page
 - [stable] Infinite scroll
 - [stable] YouTube trailer links open the video directly
