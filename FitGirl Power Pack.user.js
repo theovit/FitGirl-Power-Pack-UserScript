@@ -41,7 +41,8 @@ const settings = {
   hideUncategorized: 'Hide Uncategorized posts on the main page',
   hideDigests: 'Hide Updates Digest posts on the main page',
   hideHypervisor: 'Hide Hypervisor Bypass posts on the main page',
-  gameFilter: 'Tag filter on post lists'
+  gameFilter: 'Tag filter on post lists',
+  backToTop: 'Back to top button'
 };
 
 const offByDefault = ['hideUncategorized', 'hideDigests', 'hideHypervisor'];
@@ -312,6 +313,26 @@ whenEnabled('gameFilter', function tagFilterBar() {
 
 // Styled on its own so the panel stays readable with the dark theme turned off
 GM_addStyle(`
+  .fg-back-to-top {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 100;
+    display: none;
+    padding: 10px 14px;
+    background: #f887ff;
+    color: #121212;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: none;
+    cursor: pointer;
+  }
+  .fg-back-to-top.fg-visible {
+    display: block;
+  }
   .fg-filter-searching {
     margin: 1em 0;
     color: #f887ff;
@@ -491,8 +512,26 @@ whenDomReady(function settingsPanel() {
   menu.appendChild(li);
 });
 
+whenEnabled('backToTop', function backToTopButton() {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'fg-back-to-top';
+  button.textContent = '↑ Top';
+  button.title = 'Back to top';
+  button.setAttribute('aria-label', 'Back to top');
+  button.addEventListener('click', () => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  });
+  document.body.appendChild(button);
+
+  const update = () => button.classList.toggle('fg-visible', window.scrollY > window.innerHeight);
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+});
+
 /*****************************************************************
- * 1. DARK MODE STYLES                                            *
+ * 1. DARK MODE STYLES                                           *
  *****************************************************************/
 const recoloredImages = {};
 
