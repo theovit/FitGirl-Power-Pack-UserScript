@@ -909,6 +909,15 @@ whenEnabled('trailers', function YouTubeTrailerLinks(){
  *****************************************************************/
 whenEnabled('infiniteScroll', function infiniteScroll(){
   let loading=false;
+  // A fetched post's donate box follows it the same way as on a normal page (see hidePostRule).
+  // The site's own CSS still decides where boxes show, so the main page stays without them.
+  function withDonateBox(post){
+    const next=post.nextElementSibling;
+    if(!next) return [post];
+    if(next.matches('a')&&next.querySelector('#jBnskDj9')) return [post,next];
+    const box=next.matches('style')&&next.nextElementSibling;
+    return box&&box.matches('#jBnskDj9')?[post,next,box]:[post];
+  }
   async function loadNext(){
     if(loading) return;
     const next=document.querySelector('a.next.page-numbers');
@@ -927,7 +936,7 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
       const hidden=[...filterSelectors(),...Object.keys(categoryHides).filter(isEnabled).map(setting=>categoryHides[setting])].join(', ');
       const kept=hidden?articles.filter(a=>!a.matches(hidden)):articles;
       discardedPosts+=articles.length-kept.length;
-      kept.forEach(a=>parent.insertBefore(a,nav||null));
+      kept.flatMap(withDonateBox).forEach(element=>parent.insertBefore(element,nav||null));
       replaceImages();
       const newNext=doc.querySelector('a.next.page-numbers');
       if(newNext&&next){next.href=newNext.href;} else if(next){next.remove();}

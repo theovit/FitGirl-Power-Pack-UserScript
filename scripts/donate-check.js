@@ -71,6 +71,82 @@ async (defaultPage) => {
     if (name === 'tag3dAdult') await page.screenshot({ path: SHOTS + '/donate-adult.png' });
     if (name === 'tag3dAction') await page.screenshot({ path: SHOTS + '/donate-action.png' });
   }
+
+  // Posts added by infinite scroll bring their boxes with them
+  const SCROLL_CASES = {
+    scrollTag3d: { path: '/tag/3d/' },
+    scrollCategory: { path: '/category/lossless-repack/' },
+    scrollTag3dAction: { path: '/tag/3d/', include: [tag('action', 'Action')] },
+    scrollTag3dHide: { path: '/tag/3d/', exclude: [tag('first-person', 'First-person')] },
+    scrollHome: { path: '/' },
+    scrollHomeHideDigests: { path: '/', settings: { hideDigests: true } },
+    scrollSearch: { path: '/?s=racing' },
+  };
+  const readScroll = () => page.evaluate(() => {
+    const visible = e => {
+      const target = e.tagName === 'A' ? e.querySelector('div') || e : e;
+      return target.getClientRects().length > 0 && target.getBoundingClientRect().height > 0;
+    };
+    const posts = [...document.querySelectorAll('article')];
+    const boxes = [...document.querySelectorAll('[id="jBnskDj9"]')];
+    const boxOf = post => {
+      for (let e = post.nextElementSibling; e && e.tagName !== 'ARTICLE'; e = e.nextElementSibling) {
+        if (e.id === 'jBnskDj9' || e.querySelector?.('#jBnskDj9')) return e;
+      }
+      return null;
+    };
+    const withBox = posts.map(p => ({ post: p, box: boxOf(p) }));
+    return {
+      posts: posts.length,
+      postsShown: posts.filter(visible).length,
+      boxes: boxes.length,
+      boxesShown: boxes.filter(visible).length,
+      shownPostsWithShownBox: withBox.filter(x => visible(x.post) && x.box && visible(x.box)).length,
+      shownBoxUnderHiddenPost: withBox.filter(x => !visible(x.post) && x.box && visible(x.box)).length,
+      status: document.querySelector('.fg-filter-status')?.textContent,
+    };
+  });
+  for (const [name, { path, include = [], exclude = [], settings = {} }] of Object.entries(SCROLL_CASES)) {
+    await page.goto('https://fitgirl-repacks.site/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1000);
+    await page.evaluate(([i, e, s]) => {
+      localStorage.clear();
+      for (const k in s) localStorage.setItem('fg-' + k, JSON.stringify(s[k]));
+      sessionStorage.setItem('fg-filters', JSON.stringify({ filterInclude: i, filterExclude: e }));
+    }, [include, exclude, settings]);
+    await page.goto('https://fitgirl-repacks.site' + path, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1500);
+    await page.mouse.move(800, 600);
+    for (let i = 0; i < 40; i++) { await page.mouse.wheel(0, 800); await page.waitForTimeout(120); }
+    await page.waitForTimeout(2500);
+    out[name] = await readScroll();
+    if (name === 'scrollTag3d') {
+      await page.evaluate(() => {
+        const boxes = [...document.querySelectorAll('[id="jBnskDj9"]')];
+        boxes[boxes.length - 1].scrollIntoView({ block: 'center' });
+      });
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: SHOTS + '/donate-scrolled.png' });
+    }
+  }
+
+  // A filter added after scrolling, before anything was discarded, hides loaded posts and boxes together
+  await page.goto('https://fitgirl-repacks.site/', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1000);
+  await page.evaluate(() => localStorage.clear());
+  await page.goto('https://fitgirl-repacks.site/tag/3d/', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1500);
+  await page.mouse.move(800, 600);
+  for (let i = 0; i < 30; i++) { await page.mouse.wheel(0, 800); await page.waitForTimeout(120); }
+  await page.waitForTimeout(2000);
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.locator('.fg-filter summary').click();
+  await page.waitForFunction(() => document.querySelectorAll('#fg-filter-tags option').length > 0, null, { timeout: 15000 });
+  const input = page.locator('[data-list="filterInclude"] input');
+  await input.fill('Action');
+  await input.press('Enter');
+  await page.waitForTimeout(800);
+  out.filterAfterScrolling = await readScroll();
   out.errors = errors;
   await context.close();
   return out;

@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Filtering no longer stacks donate boxes at the top of the list. A post's donate box now hides along with it, and stays when the post is shown.
+- Posts loaded by infinite scroll now keep their donate boxes, wherever the site shows them.
 - The filter's tag list now appears instantly after the first load. It's saved and refreshed in the background once a day, and a new Refresh tags button in settings updates it right away.
 
 ## 1.0.10
