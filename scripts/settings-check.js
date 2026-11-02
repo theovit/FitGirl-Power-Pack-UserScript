@@ -104,6 +104,17 @@ async (defaultPage) => {
   await click('Hide Updates Digest');
   out.bothOff = { uncategorized: await visible('uncategorized'), digests: await visible('updates-digest') };
 
+  await open('/page/2/');
+  out.hypervisorShownByDefault = [await visible('hypervisor-bypass'), await total('hypervisor-bypass')];
+  out.lossless = await visible('lossless-repack');
+  await click('Hide Hypervisor');
+  out.hypervisorHiddenWhenOn = { hypervisor: [await visible('hypervisor-bypass'), await total('hypervisor-bypass')], lossless: await visible('lossless-repack') };
+  await open('/category/hypervisor-bypass/');
+  out.hypervisorShownOnCategory = await visible('hypervisor-bypass');
+  await click('Hide Hypervisor');
+  await open('/page/2/');
+  out.hypervisorBackWhenOff = await visible('hypervisor-bypass');
+
   // The on-page panel, using real clicks
   const shots = 'C:/Users/Andrew/AppData/Local/Temp/claude/D--GitHub/a85b545d-3b74-4545-b5ad-f306bf0b875c/scratchpad';
   const openPanel = async () => {

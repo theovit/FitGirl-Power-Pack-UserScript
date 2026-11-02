@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- A new optional setting can hide Hypervisor Bypass posts on the main page. It's off by default.
 - Infinite scroll now starts loading two screens before the end of the page, and keeps loading if you're already near the end when a page arrives, so you're much less likely to reach the bottom.
 
 ## 1.0.8
