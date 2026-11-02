@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.15
 - On post lists, Page Down and Page Up now jump to the next or previous post, placing it at the top of the screen. It can be turned off in settings.
 
 ## 1.0.14
