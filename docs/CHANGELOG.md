@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.13
 - Fixed the page running off the right side of the window on screens narrower than about 1700px. The right sidebar and top bar now fit, and on phones the sidebar sits below the posts at full width.
 
 ## 1.0.12
