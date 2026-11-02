@@ -24,9 +24,3 @@ A userscript that adds a dark theme and browsing tools to FitGirl Repacks.
 Click **Settings** in the site's top menu, or open the Tampermonkey menu on any page of the site, to turn each feature on or off. The three hide options start off, and everything else starts on.
 
 The Refresh tags button in the Settings panel updates the filter's saved tag list. It also refreshes by itself once a day.
-
-## Development
-
-The script is the single file `FitGirl Power Pack.user.js`, and Greasy Fork syncs it from this repo, so keep that filename and raise `@version` with each release.
-
-`scripts/` holds checks that run the script against the live site using the Playwright MCP tools. Their paths are relative to the folder that holds this repo. They stand in for Tampermonkey's functions, so also try changes in Tampermonkey before releasing.
