@@ -99,6 +99,7 @@ const filterStyle = isEnabled('gameFilter') ? GM_addStyle(filterCss()) : null;
 // makes the page slow. It reports here so the status line can still count them.
 let discardedPosts = 0;
 let searchPaused = false;
+let searching = false;
 
 function updateFilterStatus() {
   const status = document.querySelector('.fg-filter-status');
@@ -106,8 +107,24 @@ function updateFilterStatus() {
   const active = GM_getValue('filterInclude', []).length + GM_getValue('filterExclude', []).length;
   const posts = [...document.querySelectorAll('article')];
   const shown = posts.filter(post => post.offsetParent !== null).length;
-  const keepLooking = searchPaused ? ' Scroll to keep looking.' : '';
-  status.textContent = active ? `${active} active, showing ${shown} of ${posts.length + discardedPosts} posts checked.${keepLooking}` : '';
+  const checked = posts.length + discardedPosts;
+  const progress = searchPaused ? ' Scroll to keep looking.' : searching ? ' Searching for more…' : '';
+  status.textContent = active ? `${active} active, showing ${shown} of ${checked} posts checked.${progress}` : '';
+
+  // The status line scrolls out of view, so also say what's happening at the end of the list
+  const nav = document.querySelector('nav.navigation');
+  if (!nav) return;
+  let message = document.querySelector('.fg-filter-searching');
+  if (!message) {
+    message = document.createElement('p');
+    message.className = 'fg-filter-searching';
+    message.setAttribute('role', 'status');
+    nav.parentNode.insertBefore(message, nav.nextSibling);
+  }
+  message.textContent = !active ? ''
+    : searchPaused ? `No matches in the last 20 pages (${checked} posts checked). Scroll to keep looking.`
+    : searching ? `Searching for matching games, this can take a moment. ${checked} posts checked so far.`
+    : '';
 }
 
 async function fetchAllTags() {
@@ -238,6 +255,15 @@ whenEnabled('gameFilter', function tagFilterBar() {
 
 // Styled on its own so the panel stays readable with the dark theme turned off
 GM_addStyle(`
+  .fg-filter-searching {
+    margin: 1em 0;
+    color: #f887ff;
+    font-size: 15px;
+    text-align: center;
+  }
+  .fg-filter-searching:empty {
+    display: none;
+  }
   .fg-filter {
     margin: 1.5em 0 0;
     padding: 12px 16px;
@@ -809,6 +835,8 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
     const next=document.querySelector('a.next.page-numbers');
     if(!next) return;
     loading=true;
+    searching=true;
+    updateFilterStatus();
     let loaded=false;
     try{
       const html=await (await fetch(next.href)).text();
@@ -830,9 +858,13 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
       searchPaused=pagesWithoutMatch>=20;
       updateFilterStatus();
       if(!kept.length&&!searchPaused) await new Promise(done=>setTimeout(done,1000));
-    }catch(err){console.error('FG infinite scroll error',err);} finally{loading=false;}
+    }catch(err){console.error('FG infinite scroll error',err);} finally{
+      loading=false;
+      searching=false;
+    }
     // Scrolling during a load is ignored, so check again; not after errors, to avoid retrying forever
     if(loaded&&!searchPaused) loadIfNearEnd();
+    if(!loading) updateFilterStatus();
   }
   function loadIfNearEnd(){
     const next=document.querySelector('a.next.page-numbers');
