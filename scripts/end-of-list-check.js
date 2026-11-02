@@ -23,6 +23,8 @@ async (defaultPage) => {
   });
   const start = async (path, values = {}) => {
     await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+    // Let this page's script run first, or it would use up the filter set below
+    await page.waitForTimeout(1000);
     await page.evaluate(({ filterInclude, ...settings }) => {
       localStorage.clear();
       for (const k in settings) localStorage.setItem('fg-' + k, JSON.stringify(settings[k]));

@@ -67,8 +67,14 @@ const categoryHides = {
   hideDigests: 'body.home article.category-updates-digest',
   hideHypervisor: 'body.home article.category-hypervisor-bypass'
 };
+// Each post's donate box follows it as a sibling, after a style tag or wrapped in a link,
+// so hiding a post has to hide its box too or the boxes pile up at the top of the list
+function hidePostRule(selector) {
+  return `${selector}, ${selector} + style + div, ${selector} + a { display: none; }`;
+}
+
 Object.entries(categoryHides).forEach(([setting, selector]) => {
-  if (isEnabled(setting)) GM_addStyle(`${selector} { display: none; }`);
+  if (isEnabled(setting)) GM_addStyle(hidePostRule(selector));
 });
 
 /*****************************************************************
@@ -105,7 +111,7 @@ function filterSelectors() {
 }
 
 function filterCss() {
-  return filterSelectors().map(selector => `${selector} { display: none; }`).join('\n');
+  return filterSelectors().map(hidePostRule).join('\n');
 }
 
 const filterStyle = isEnabled('gameFilter') ? GM_addStyle(filterCss()) : null;

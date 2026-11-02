@@ -1,5 +1,6 @@
 # Project Memory
 
+- Donate boxes (`#jBnskDj9`) are siblings after each post, not inside it, so `hidePostRule` hides them with the post. The site itself hides them on the main page and search results, so test on tag, category or date lists. Infinite scroll only inserts `article` elements, so loaded posts have no donate box.
 - The filter's tag list is saved as `filterTagCache` with a `savedAt` time. It shows immediately, and a copy older than 24 hours refreshes in the background, so a brand-new tag can take up to a day to appear. The Tags page still fetches live.
 - Tag filters live only in memory and clear on every page load. The script's own reload after discarding posts passes them through the one-time `fg-filters` sessionStorage key, which test scripts also use to start with a filter. Installs that used filters before this may have old unused `filterInclude` and `filterExclude` values saved; they're ignored.
 - With infinite scroll on, the page bar is collapsed, not `display: none`, because `loadIfNearEnd` measures the `a.next` link's position and a hidden link reads as 0, which would fetch forever. Use `nav.paging-navigation` to find it: `nav.navigation` also matches the sidebar menu and single-post navigation.
