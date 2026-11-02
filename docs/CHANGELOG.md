@@ -1,6 +1,7 @@
 # Changelog
 
-## Unreleased
+## 1.0.12
+- The script's description and the README now cover the current features and where to find Settings.
 - The right sidebar now shows on every page at the same size as the main page, including FAQ, Donate, Popular Repacks and the Tags page. It can be turned off in settings.
 
 ## 1.0.11
