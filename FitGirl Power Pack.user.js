@@ -61,30 +61,44 @@ Object.entries(settings).forEach(([setting, label]) => {
   });
 });
 
-// CSS rather than removal, so posts added later by infinite scroll are covered too.
 // The site keeps the home class on every main page, including /page/2/ and on.
-if (isEnabled('hideUncategorized')) GM_addStyle('body.home article.category-uncategorized { display: none; }');
-if (isEnabled('hideDigests')) GM_addStyle('body.home article.category-updates-digest { display: none; }');
-if (isEnabled('hideHypervisor')) GM_addStyle('body.home article.category-hypervisor-bypass { display: none; }');
+const categoryHides = {
+  hideUncategorized: 'body.home article.category-uncategorized',
+  hideDigests: 'body.home article.category-updates-digest',
+  hideHypervisor: 'body.home article.category-hypervisor-bypass'
+};
+Object.entries(categoryHides).forEach(([setting, selector]) => {
+  if (isEnabled(setting)) GM_addStyle(`${selector} { display: none; }`);
+});
 
 /*****************************************************************
  * TAG FILTER                                                     *
  *****************************************************************/
 const filterPages = 'body:is(.home, .archive, .search)';
 
-// Posts carry their tags as classes, so CSS can hide them before they're drawn,
-// including posts added later by infinite scroll. Include matches any chosen tag.
-function filterCss() {
-  const selectors = list => GM_getValue(list, []).map(tag => `.tag-${CSS.escape(tag.slug)}`).join(', ');
-  const include = selectors('filterInclude');
-  const exclude = selectors('filterExclude');
+// Posts carry their tags as classes, so CSS can hide them before they're drawn.
+// Include matches any chosen tag.
+function filterSelectors() {
+  if (!isEnabled('gameFilter')) return [];
+  const tags = list => GM_getValue(list, []).map(tag => `.tag-${CSS.escape(tag.slug)}`).join(', ');
+  const include = tags('filterInclude');
+  const exclude = tags('filterExclude');
   return [
-    include && `${filterPages} article:not(${include}) { display: none; }`,
-    exclude && `${filterPages} article:is(${exclude}) { display: none; }`
-  ].join('\n');
+    include && `${filterPages} article:not(${include})`,
+    exclude && `${filterPages} article:is(${exclude})`
+  ].filter(Boolean);
+}
+
+function filterCss() {
+  return filterSelectors().map(selector => `${selector} { display: none; }`).join('\n');
 }
 
 const filterStyle = isEnabled('gameFilter') ? GM_addStyle(filterCss()) : null;
+
+// Infinite scroll throws away posts that would only be hidden, because keeping them
+// makes the page slow. It reports here so the status line can still count them.
+let discardedPosts = 0;
+let searchPaused = false;
 
 function updateFilterStatus() {
   const status = document.querySelector('.fg-filter-status');
@@ -92,8 +106,8 @@ function updateFilterStatus() {
   const active = GM_getValue('filterInclude', []).length + GM_getValue('filterExclude', []).length;
   const posts = [...document.querySelectorAll('article')];
   const shown = posts.filter(post => post.offsetParent !== null).length;
-  const keepLooking = shown === 0 && document.querySelector('a.next.page-numbers') ? ' Scroll to keep looking.' : '';
-  status.textContent = active ? `${active} active, showing ${shown} of ${posts.length} loaded posts.${keepLooking}` : '';
+  const keepLooking = searchPaused ? ' Scroll to keep looking.' : '';
+  status.textContent = active ? `${active} active, showing ${shown} of ${posts.length + discardedPosts} posts checked.${keepLooking}` : '';
 }
 
 async function fetchAllTags() {
@@ -163,6 +177,11 @@ whenEnabled('gameFilter', function tagFilterBar() {
   }
 
   function render() {
+    // Discarded posts can't be brought back in place, so a changed filter starts over
+    if (discardedPosts) {
+      location.reload();
+      return;
+    }
     bar.querySelectorAll('[data-list]').forEach(column => {
       const list = column.dataset.list;
       column.querySelector('.fg-filter-chips').replaceChildren(...GM_getValue(list, []).map(tag => {
@@ -784,8 +803,7 @@ whenEnabled('trailers', function YouTubeTrailerLinks(){
  *****************************************************************/
 whenEnabled('infiniteScroll', function infiniteScroll(){
   let loading=false;
-  // A filter can hide most posts, so limit the pages fetched without the reader scrolling
-  let autoLoads=0;
+  let pagesWithoutMatch=0;
   async function loadNext(){
     if(loading) return;
     const next=document.querySelector('a.next.page-numbers');
@@ -798,18 +816,23 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
       const articles=[...doc.querySelectorAll('article')];
       const nav=document.querySelector('nav.navigation');
       const parent=nav?nav.parentNode:document.querySelector('main')||document.body;
-      articles.forEach(a=>parent.insertBefore(a,nav||null));
+      // The fetched page has the same body classes, so these match there too
+      const hidden=[...filterSelectors(),...Object.keys(categoryHides).filter(isEnabled).map(setting=>categoryHides[setting])].join(', ');
+      const kept=hidden?articles.filter(a=>!a.matches(hidden)):articles;
+      discardedPosts+=articles.length-kept.length;
+      kept.forEach(a=>parent.insertBefore(a,nav||null));
       replaceImages();
-      updateFilterStatus();
       const newNext=doc.querySelector('a.next.page-numbers');
       if(newNext&&next){next.href=newNext.href;} else if(next){next.remove();}
       loaded=true;
+      pagesWithoutMatch=kept.length?0:pagesWithoutMatch+1;
+      // Stop after a long empty run until the reader scrolls, and go gently before then
+      searchPaused=pagesWithoutMatch>=20;
+      updateFilterStatus();
+      if(!kept.length&&!searchPaused) await new Promise(done=>setTimeout(done,1000));
     }catch(err){console.error('FG infinite scroll error',err);} finally{loading=false;}
     // Scrolling during a load is ignored, so check again; not after errors, to avoid retrying forever
-    if(loaded&&autoLoads<10){
-      autoLoads++;
-      loadIfNearEnd();
-    }
+    if(loaded&&!searchPaused) loadIfNearEnd();
   }
   function loadIfNearEnd(){
     const next=document.querySelector('a.next.page-numbers');
@@ -819,7 +842,11 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
   }
   // Wheel too, because a heavily filtered page may be too short to scroll
   ['scroll','wheel'].forEach(type=>window.addEventListener(type,()=>{
-    autoLoads=0;
+    if(searchPaused){
+      searchPaused=false;
+      pagesWithoutMatch=0;
+      updateFilterStatus();
+    }
     loadIfNearEnd();
   },{passive:true}));
   loadIfNearEnd();

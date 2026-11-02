@@ -1,6 +1,6 @@
 /*
  * Exercises the tag filter on the live site: tag loading, include, exclude, persistence,
- * infinite scroll, page types, the auto-load limit, and tag load failure.
+ * infinite scroll, page types, the empty-search pause, and tag load failure.
  * Input: none.
  * Usage: Playwright MCP browser_run_code_unsafe with filename set to this file.
  * Stores values in localStorage through GM_* shims, not through Tampermonkey.
@@ -23,77 +23,89 @@ async (defaultPage) => {
     window.GM_getValue = (k, d) => { const v = localStorage.getItem("fg-" + k); return v === null ? d : JSON.parse(v); };
     window.GM_setValue = (k, v) => localStorage.setItem("fg-" + k, JSON.stringify(v));
     window.GM_registerMenuCommand = () => {};`;
+  // Injected on every load, because changing a filter after posts were discarded reloads the page
+  page.on('domcontentloaded', async () => {
+    await page.addScriptTag({ content: SHIMS }).catch(() => {});
+    await page.addScriptTag({ path: USERSCRIPT }).catch(() => {});
+    await page.evaluate(() => [...document.querySelectorAll('body *')].filter(e => getComputedStyle(e).position === 'fixed' && /Discover more/.test(e.textContent)).forEach(e => e.remove())).catch(() => {});
+  });
   const open = async path => {
     await page.goto(BASE + path, { waitUntil: 'domcontentloaded' });
-    await page.addScriptTag({ content: SHIMS });
-    await page.addScriptTag({ path: USERSCRIPT });
-    await page.waitForTimeout(1200);
-    await page.evaluate(() => [...document.querySelectorAll('body *')].filter(e => getComputedStyle(e).position === 'fixed' && /Discover more/.test(e.textContent)).forEach(e => e.remove()));
+    await page.waitForTimeout(1500);
   };
+  const setFilters = async (include = [], exclude = []) => {
+    await page.evaluate(([i, e]) => {
+      localStorage.setItem('fg-filterInclude', JSON.stringify(i));
+      localStorage.setItem('fg-filterExclude', JSON.stringify(e));
+    }, [include, exclude]);
+  };
+  const tag = (slug, name) => ({ slug, name });
   const state = () => page.evaluate(() => {
     const posts = [...document.querySelectorAll('article')];
-    const shown = posts.filter(p => p.offsetParent !== null);
     return {
       bar: !!document.querySelector('.fg-filter'),
       open: document.querySelector('.fg-filter')?.open,
       status: document.querySelector('.fg-filter-status')?.textContent,
       options: document.querySelectorAll('#fg-filter-tags option').length,
-      posts: posts.length,
-      shown: shown.length,
+      inPage: posts.length,
+      shown: posts.filter(p => p.offsetParent !== null).length,
       include: [...document.querySelectorAll('[data-list="filterInclude"] .fg-filter-chips button')].map(b => b.textContent),
       exclude: [...document.querySelectorAll('[data-list="filterExclude"] .fg-filter-chips button')].map(b => b.textContent),
     };
   });
-  const everyShownHas = tag => page.evaluate(tag => [...document.querySelectorAll('article')].filter(p => p.offsetParent !== null).every(p => p.classList.contains('tag-' + tag)), tag);
-  const noShownHas = tag => page.evaluate(tag => ![...document.querySelectorAll('article')].filter(p => p.offsetParent !== null).some(p => p.classList.contains('tag-' + tag)), tag);
+  const everyShownHas = name => page.evaluate(name => [...document.querySelectorAll('article')].filter(p => p.offsetParent !== null).every(p => p.classList.contains('tag-' + name)), name);
+  const noShownHas = name => page.evaluate(name => ![...document.querySelectorAll('article')].filter(p => p.offsetParent !== null).some(p => p.classList.contains('tag-' + name)), name);
   const pick = async (column, name) => {
     const input = page.locator(`[data-list="${column}"] input`);
     await input.fill(name);
     await input.press('Enter');
     await page.waitForTimeout(200);
   };
-  const openBar = async () => {
-    await page.locator('.fg-filter summary').click();
-    await page.waitForFunction(() => document.querySelectorAll('#fg-filter-tags option').length > 0, null, { timeout: 15000 });
-  };
+  const tagsReady = () => page.waitForFunction(() => document.querySelectorAll('#fg-filter-tags option').length > 0, null, { timeout: 15000 });
   const out = {};
 
+  // Picking through the bar, before anything has been discarded
+  await page.goto(BASE + '/');
+  await page.evaluate(() => localStorage.clear());
   await open('/');
   out.defaultHome = await state();
-  await openBar();
+  await page.locator('.fg-filter summary').click();
+  await tagsReady();
   out.tagsLoaded = (await state()).options;
-
-  await pick('filterExclude', '3d');
-  out.exclude3d = { ...(await state()), none3d: await noShownHas('3d') };
-  await page.screenshot({ path: SHOTS + '/filter-exclude.png' });
-
-  await page.locator('.fg-filter-clear').click();
-  out.cleared = await state();
-
-  await pick('filterInclude', 'Action');
-  out.includeAction = { ...(await state()), allAction: await everyShownHas('action') };
-
-  // Moving a tag between lists, and a name that isn't a tag
-  await pick('filterExclude', 'Action');
-  out.movedToExclude = await state();
   await pick('filterInclude', 'notarealtag');
   out.fakeTag = { ...(await state()), inputKept: await page.locator('[data-list="filterInclude"] input').inputValue() };
   await page.locator('[data-list="filterInclude"] input').fill('');
-  await page.locator('.fg-filter-clear').click();
+  await pick('filterExclude', 'action');
+  out.typedExclude = { ...(await state()), noAction: await noShownHas('action') };
+  await page.screenshot({ path: SHOTS + '/filter-exclude.png' });
 
-  await pick('filterInclude', 'Action');
-  await pick('filterExclude', 'First-person');
-  out.both = { ...(await state()), allAction: await everyShownHas('action'), noFirst: await noShownHas('first-person') };
-  await page.waitForTimeout(800);
-
+  // Tag moved between lists stays in one list, in storage
+  await setFilters([], [tag('action', 'Action')]);
   await open('/');
-  out.afterReload = { ...(await state()), allAction: await everyShownHas('action'), noFirst: await noShownHas('first-person') };
-  await page.screenshot({ path: SHOTS + '/filter-both.png' });
+  await tagsReady();
+  await pick('filterInclude', 'Action');
+  await page.waitForTimeout(1500);
+  out.movedToInclude = await page.evaluate(() => ({ include: localStorage.getItem('fg-filterInclude'), exclude: localStorage.getItem('fg-filterExclude') }));
 
-  await page.locator('a.next.page-numbers').scrollIntoViewIfNeeded();
-  await page.waitForTimeout(3000);
+  // Both lists together, reload, and scrolling
+  await setFilters([tag('action', 'Action')], [tag('first-person', 'First-person')]);
+  await open('/');
+  await page.waitForTimeout(2500);
+  out.both = { ...(await state()), allAction: await everyShownHas('action'), noFirst: await noShownHas('first-person') };
+  await page.screenshot({ path: SHOTS + '/filter-both.png' });
+  await page.mouse.move(800, 600);
+  for (let i = 0; i < 20; i++) { await page.mouse.wheel(0, 500); await page.waitForTimeout(150); }
+  await page.waitForTimeout(1500);
   out.afterScroll = { ...(await state()), allAction: await everyShownHas('action'), noFirst: await noShownHas('first-person') };
 
+  // Clearing after posts were discarded brings them back through a reload
+  await page.evaluate(() => scrollTo(0, 0));
+  await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('.fg-filter-clear').click()]);
+  await page.waitForTimeout(1500);
+  out.clearedAfterDiscard = { ...(await state()), stored: await page.evaluate(() => localStorage.getItem('fg-filterInclude')) };
+
+  // Other page types
+  await setFilters([tag('action', 'Action')], []);
   for (const path of ['/page/2/', '/category/lossless-repack/', '/tag/rpg/', '/?s=racing', '/2026/10/']) {
     await open(path);
     out['page ' + path] = { ...(await state()), allAction: await everyShownHas('action') };
@@ -101,22 +113,25 @@ async (defaultPage) => {
   for (const path of ['/upcoming-repacks-10/', '/popular-repacks/', '/donations/']) {
     await open(path);
     const s = await state();
-    out['not a list ' + path] = { bar: s.bar, posts: s.posts, shown: s.shown };
+    out['not a list ' + path] = { bar: s.bar, inPage: s.inPage, shown: s.shown };
   }
 
-  // Auto-load limit with a rare tag, with no scrolling
-  await open('/');
-  await page.waitForFunction(() => document.querySelectorAll('#fg-filter-tags option').length > 0, null, { timeout: 15000 });
-  await page.locator('.fg-filter-clear').click();
-  await page.waitForTimeout(3000);
+  // A filter nothing matches pauses after 20 pages, then scrolling resumes it
+  await setFilters([tag('no-such-tag', 'Nothing')], []);
   pageRequests = 0;
-  await pick('filterInclude', 'Hunting');
-  await page.waitForTimeout(15000);
-  out.rareTag = { ...(await state()), pageRequests };
-  await page.locator('.fg-filter-clear').click();
-  await page.waitForTimeout(500);
+  const started = Date.now();
+  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => /keep looking/.test(document.querySelector('.fg-filter-status')?.textContent || ''), null, { timeout: 60000 });
+  out.emptySearch = { ...(await state()), pageRequests, seconds: Math.round((Date.now() - started) / 1000) };
+  await page.waitForTimeout(3000);
+  out.staysPaused = pageRequests;
+  await page.mouse.move(800, 600);
+  await page.mouse.wheel(0, 100);
+  await page.waitForTimeout(3500);
+  out.resumedByWheel = { ...(await state()), pageRequests };
 
   // Tag loading failure, then a working reopen
+  await setFilters();
   await page.route('**/wp-json/wp/v2/tags*', r => r.fulfill({ status: 500, body: '{}' }));
   await open('/');
   await page.locator('.fg-filter summary').click();
@@ -125,17 +140,15 @@ async (defaultPage) => {
   await page.unroute('**/wp-json/wp/v2/tags*');
   await page.locator('.fg-filter summary').click();
   await page.locator('.fg-filter summary').click();
-  await page.waitForFunction(() => document.querySelectorAll('#fg-filter-tags option').length > 0, null, { timeout: 15000 });
+  await tagsReady();
   out.tagRetry = (await state()).options;
 
-  // Setting turned off
-  await page.evaluate(() => {
-    GM_setValue('filterExclude', [{ slug: '3d', name: '3D' }]);
-    GM_setValue('gameFilter', false);
-  });
+  // Setting turned off ignores a saved filter
+  await setFilters([], [tag('3d', '3D')]);
+  await page.evaluate(() => localStorage.setItem('fg-gameFilter', 'false'));
   await open('/');
   const off = await state();
-  out.settingOff = { bar: off.bar, shown: off.shown, posts: off.posts };
+  out.settingOff = { bar: off.bar, shown: off.shown, inPage: off.inPage };
 
   out.errors = errors;
   await context.close();
