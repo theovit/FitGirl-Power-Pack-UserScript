@@ -100,6 +100,7 @@ const filterStyle = isEnabled('gameFilter') ? GM_addStyle(filterCss()) : null;
 let discardedPosts = 0;
 let searchPaused = false;
 let searching = false;
+let pagesWithoutMatch = 0;
 
 function updateFilterStatus() {
   const status = document.querySelector('.fg-filter-status');
@@ -125,6 +126,12 @@ function updateFilterStatus() {
     : searchPaused ? `No matches in the last 20 pages (${checked} posts checked). Scroll to keep looking.`
     : searching ? `Searching for matching games, this can take a moment. ${checked} posts checked so far.`
     : '';
+  if (active && pagesWithoutMatch >= 5 && isEnabled('tags')) {
+    const tagsLink = document.createElement('a');
+    tagsLink.href = 'https://fitgirl-repacks.site/tags';
+    tagsLink.textContent = 'Tags page';
+    message.append(' Taking a while? We recommend the ', tagsLink, ', which goes straight to every game with a tag.');
+  }
 }
 
 async function fetchAllTags() {
@@ -829,7 +836,6 @@ whenEnabled('trailers', function YouTubeTrailerLinks(){
  *****************************************************************/
 whenEnabled('infiniteScroll', function infiniteScroll(){
   let loading=false;
-  let pagesWithoutMatch=0;
   async function loadNext(){
     if(loading) return;
     const next=document.querySelector('a.next.page-numbers');
