@@ -76,6 +76,11 @@ Object.entries(categoryHides).forEach(([setting, selector]) => {
  *****************************************************************/
 const filterPages = 'body:is(.home, .archive, .search)';
 
+// Collapsed rather than display: none, because infinite scroll measures where the next link sits
+if (isEnabled('infiniteScroll')) {
+  GM_addStyle('nav.paging-navigation { visibility: hidden; height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; overflow: hidden; }');
+}
+
 // Posts carry their tags as classes, so CSS can hide them before they're drawn.
 // Include matches any chosen tag.
 function filterSelectors() {
@@ -103,34 +108,39 @@ let searching = false;
 let pagesWithoutMatch = 0;
 
 function updateFilterStatus() {
-  const status = document.querySelector('.fg-filter-status');
-  if (!status) return;
-  const active = GM_getValue('filterInclude', []).length + GM_getValue('filterExclude', []).length;
+  const active = isEnabled('gameFilter') ? GM_getValue('filterInclude', []).length + GM_getValue('filterExclude', []).length : 0;
   const posts = [...document.querySelectorAll('article')];
   const shown = posts.filter(post => post.offsetParent !== null).length;
   const checked = posts.length + discardedPosts;
-  const progress = searchPaused ? ' Scroll to keep looking.' : searching ? ' Searching for more…' : '';
-  status.textContent = active ? `${active} active, showing ${shown} of ${checked} posts checked.${progress}` : '';
+  const recommendTags = isEnabled('tags');
+
+  const status = document.querySelector('.fg-filter-status');
+  if (status) {
+    const progress = searchPaused ? ' Search paused.' : searching ? ' Searching for more…' : '';
+    status.textContent = active ? `${active} active, showing ${shown} of ${checked} posts checked.${progress}` : '';
+  }
 
   // The status line scrolls out of view, so also say what's happening at the end of the list
-  const nav = document.querySelector('nav.navigation');
-  if (!nav) return;
+  if (!isEnabled('infiniteScroll') || !posts.length || !document.body.matches(filterPages)) return;
   let message = document.querySelector('.fg-filter-searching');
   if (!message) {
     message = document.createElement('p');
     message.className = 'fg-filter-searching';
     message.setAttribute('role', 'status');
-    nav.parentNode.insertBefore(message, nav.nextSibling);
+    const end = document.querySelector('nav.paging-navigation') || posts[posts.length - 1];
+    end.parentNode.insertBefore(message, end.nextSibling);
   }
-  message.textContent = !active ? ''
-    : searchPaused ? `No matches in the last 20 pages (${checked} posts checked). Scroll to keep looking.`
+  const atEnd = !document.querySelector('a.next.page-numbers');
+  message.textContent = atEnd ? "You've reached the end. There are no more pages to load."
+    : !active ? ''
+    : searchPaused ? `No matches in the last 20 pages (${checked} posts checked).${recommendTags ? '' : ' Scroll to keep looking.'}`
     : searching ? `Searching for matching games, this can take a moment. ${checked} posts checked so far.`
     : '';
-  if (active && pagesWithoutMatch >= 5 && isEnabled('tags')) {
+  if (!atEnd && active && pagesWithoutMatch >= 5 && recommendTags) {
     const tagsLink = document.createElement('a');
     tagsLink.href = 'https://fitgirl-repacks.site/tags';
     tagsLink.textContent = 'Tags page';
-    message.append(' Taking a while? We recommend the ', tagsLink, ', which goes straight to every game with a tag.');
+    message.append(`${searchPaused ? ' We' : ' Taking a while? We'} recommend the `, tagsLink, ', which goes straight to every game with a tag.');
   }
 }
 
@@ -888,6 +898,7 @@ whenEnabled('infiniteScroll', function infiniteScroll(){
     loadIfNearEnd();
   },{passive:true}));
   loadIfNearEnd();
+  updateFilterStatus();
 });
 
 /*****************************************************************

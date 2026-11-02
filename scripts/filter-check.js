@@ -121,7 +121,7 @@ async (defaultPage) => {
   pageRequests = 0;
   const started = Date.now();
   await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => /keep looking/.test(document.querySelector('.fg-filter-status')?.textContent || ''), null, { timeout: 60000 });
+  await page.waitForFunction(() => /Search paused/.test(document.querySelector('.fg-filter-status')?.textContent || ''), null, { timeout: 60000 });
   out.emptySearch = { ...(await state()), pageRequests, seconds: Math.round((Date.now() - started) / 1000) };
   await page.waitForTimeout(3000);
   out.staysPaused = pageRequests;
