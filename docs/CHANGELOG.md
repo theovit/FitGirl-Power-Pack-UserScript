@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- The filter's tag list now appears instantly after the first load. It's saved and refreshed in the background once a day.
+
 ## 1.0.10
 - Tag filters now clear whenever a new page loads, instead of being remembered.
 - Links on the Tags page now open in the same tab.

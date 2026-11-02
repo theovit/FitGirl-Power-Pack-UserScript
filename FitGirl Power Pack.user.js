@@ -202,22 +202,35 @@ whenEnabled('gameFilter', function tagFilterBar() {
 
   const inputs = bar.querySelectorAll('input');
   let knownTags = null;
+  let refreshStarted = false;
+  const tagCache = GM_getValue('filterTagCache', null);
+  const tagCacheMaxAge = 24 * 60 * 60 * 1000;
 
+  function showTags(tags) {
+    knownTags = tags;
+    bar.querySelector('datalist').replaceChildren(...tags.map(tag => new Option('', tag.name)));
+    inputs.forEach(input => { input.placeholder = 'Type to search tags'; });
+  }
+
+  // Saved tags appear right away; a day-old list still shows while a new one loads behind it
   async function loadTags() {
-    if (knownTags) return;
-    inputs.forEach(input => { input.placeholder = 'Loading tags…'; });
+    if (!knownTags && tagCache) showTags(tagCache.tags);
+    if (refreshStarted || (tagCache && Date.now() - tagCache.savedAt < tagCacheMaxAge)) return;
+    refreshStarted = true;
+    if (!knownTags) inputs.forEach(input => { input.placeholder = 'Loading tags…'; });
     const { allTags, failed } = await fetchAllTags();
     if (failed) {
-      inputs.forEach(input => { input.placeholder = 'Tags failed to load. Reopen to retry.'; });
+      refreshStarted = false;
+      if (!knownTags) inputs.forEach(input => { input.placeholder = 'Tags failed to load. Reopen to retry.'; });
       return;
     }
     // Tag names arrive HTML-escaped, e.g. "Hack &amp; Slash"
-    knownTags = allTags.map(({ name, slug }) => ({
+    const tags = allTags.map(({ name, slug }) => ({
       slug,
       name: new DOMParser().parseFromString(name, 'text/html').documentElement.textContent
     }));
-    bar.querySelector('datalist').replaceChildren(...knownTags.map(tag => new Option('', tag.name)));
-    inputs.forEach(input => { input.placeholder = 'Type to search tags'; });
+    GM_setValue('filterTagCache', { savedAt: Date.now(), tags });
+    showTags(tags);
   }
 
   function render() {

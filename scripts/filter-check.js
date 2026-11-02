@@ -158,8 +158,59 @@ async (defaultPage) => {
   await page.waitForTimeout(3500);
   out.resumedByWheel = { ...(await state()), pageRequests };
 
-  // Tag loading failure, then a working reopen
+  // Tag cache: fresh shows instantly with no requests, old shows instantly then updates
+  let tagRequests = 0;
+  const countTagRequests = r => { if (/\/wp-json\/wp\/v2\/tags/.test(r.url())) tagRequests++; };
+  page.on('request', countTagRequests);
+  const openBarTimed = async () => {
+    tagRequests = 0;
+    await open('/');
+    return page.evaluate(() => {
+      const started = performance.now();
+      document.querySelector('.fg-filter summary').click();
+      return new Promise(done => {
+        const check = () => {
+          if (document.querySelectorAll('#fg-filter-tags option').length) done(Math.round(performance.now() - started));
+          else if (performance.now() - started > 15000) done(null);
+          else setTimeout(check, 5);
+        };
+        check();
+      });
+    });
+  };
+  await page.evaluate(() => localStorage.removeItem('fg-filterTagCache'));
+  const noCacheMs = await openBarTimed();
+  await page.waitForTimeout(500);
+  const savedCache = await page.evaluate(() => { const c = JSON.parse(localStorage.getItem('fg-filterTagCache')); return { tags: c?.tags.length, ageMs: Date.now() - c?.savedAt }; });
+  out.cacheNone = { msUntilTags: noCacheMs, tagRequests, savedCache };
+  const freshMs = await openBarTimed();
+  await page.waitForTimeout(1500);
+  out.cacheFresh = { msUntilTags: freshMs, tagRequests, options: (await state()).options };
+  await page.evaluate(() => {
+    const c = JSON.parse(localStorage.getItem('fg-filterTagCache'));
+    c.savedAt = Date.now() - 25 * 60 * 60 * 1000;
+    c.tags = c.tags.slice(0, 5);
+    localStorage.setItem('fg-filterTagCache', JSON.stringify(c));
+  });
+  const oldMs = await openBarTimed();
+  const oldOptionsRightAway = (await state()).options;
+  await page.waitForTimeout(3000);
+  out.cacheOld = { msUntilTags: oldMs, optionsRightAway: oldOptionsRightAway, optionsAfterRefresh: (await state()).options, tagRequests, refreshedAgeMs: await page.evaluate(() => Date.now() - JSON.parse(localStorage.getItem('fg-filterTagCache')).savedAt) };
+  await page.evaluate(() => {
+    const c = JSON.parse(localStorage.getItem('fg-filterTagCache'));
+    c.savedAt = Date.now() - 25 * 60 * 60 * 1000;
+    localStorage.setItem('fg-filterTagCache', JSON.stringify(c));
+  });
+  await page.route('**/wp-json/wp/v2/tags*', r => r.fulfill({ status: 500, body: '{}' }));
+  await openBarTimed();
+  await page.waitForTimeout(800);
+  out.cacheOldRefreshFails = { options: (await state()).options, placeholder: await page.locator('[data-list="filterInclude"] input').getAttribute('placeholder') };
+  await page.unroute('**/wp-json/wp/v2/tags*');
+  page.off('request', countTagRequests);
+
+  // Tag loading failure with nothing saved, then a working reopen
   await setFilters();
+  await page.evaluate(() => localStorage.removeItem('fg-filterTagCache'));
   await page.route('**/wp-json/wp/v2/tags*', r => r.fulfill({ status: 500, body: '{}' }));
   await open('/');
   await page.locator('.fg-filter summary').click();
